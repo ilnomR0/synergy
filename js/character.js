@@ -21,11 +21,12 @@ export class Character{
             y:0,
             z:0
         }
-        this.sensitivity = 70;
-        this.mouseSensitivity = this.sensitivity/50;
-        this.straif = 2;
-        this.jumpForce = 10;
+        this.sensitivity = 40;
+        this.mouseSensitivity = this.sensitivity/100;
+        this.straif = 20;
+        this.jumpForce = 15;
         this.timesJumped = 0;
+        this.maxCameraX = [-90, 90];
     }
     #defKeys(){
         document.addEventListener("keydown",(e)=>{
@@ -37,6 +38,9 @@ export class Character{
         document.addEventListener("mousemove", (e)=>{
             this.#camera.rotation.x -= e.movementY * this.mouseSensitivity;
             this.rotation.y += e.movementX * this.mouseSensitivity;
+        this.#camera.rotation.x = Math.max(this.#camera.rotation.x, this.maxCameraX[0]);
+        this.#camera.rotation.x = Math.min(this.#camera.rotation.x, this.maxCameraX[1]);
+        this.#camera.rotation.z+=e.movementX/50;
         });
     }
     controlCharacter(dt) {
@@ -53,7 +57,7 @@ export class Character{
             this.velocity.x += Math.sin((this.rotation.y + 90) * Math.PI / 180) * currentSpeed/(this.onGround ? 1 : this.straif);
             this.#camera.rotation.z-=dt*50;
         }
-        if (this.activeKeys[" "] && this.onGround && this.timesJumped==0) {
+        if (this.activeKeys[" "] && this.onGround && this.timesJumped<=100) {
             this.velocity.y = -this.jumpForce;
             this.timesJumped++;
         }else if(!this.activeKeys[" "] && this.timesJumped > 0 && this.onGround){
@@ -75,9 +79,13 @@ export class Character{
         }
         if (this.activeKeys["ArrowUp"]) {
             this.#camera.rotation.x += currentSensitivity;
+        this.#camera.rotation.x = Math.max(this.#camera.rotation.x, this.maxCameraX[0]);
+        this.#camera.rotation.x = Math.min(this.#camera.rotation.x, this.maxCameraX[1]);
         }
         if (this.activeKeys["ArrowDown"]) {
             this.#camera.rotation.x -= currentSensitivity;
+        this.#camera.rotation.x = Math.max(this.#camera.rotation.x, this.maxCameraX[0]);
+        this.#camera.rotation.x = Math.min(this.#camera.rotation.x, this.maxCameraX[1]);
         }
         if(this.activeKeys['p']) {
             this.#camera.fov++;
@@ -91,7 +99,7 @@ export class Character{
 
         this.#camera.position = this.position;
         this.#camera.rotation.y = this.rotation.y;
-        this.#camera.rotation.z /=1.18;
+        this.#camera.rotation.z /=150*dt;
     }
     getCamera(){
         return this.#camera;

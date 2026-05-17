@@ -9,13 +9,15 @@ export class drlib {
     #offscreenCanvas;
     #offscreenCtx;
     #backBuffer;
+    #zBuffer;
     #pixels;
+    #zPixels;
     #resWidth;
     #resHeight;
 
     constructor() {
         this.tick = 0;
-        this.res = 200; // Horizontal resolution (chunky pixels)
+        this.res = 250; // Horizontal resolution (chunky pixels)
         this.clearColor = 0xff000020
 
         // Setup main display canvas
@@ -36,16 +38,17 @@ export class drlib {
         this.#offscreenCtx = this.#offscreenCanvas.getContext("2d", { willReadFrequently: true });
 
         window.addEventListener("resize", () => { this.#resizeCanvas() });
-        this.#canvas.addEventListener("click", async () => { await this.#canvas.requestPointerLock({
-            unadjustedMovement: true,
-        }) });
+        this.#canvas.addEventListener("click", async () => {
+            await this.#canvas.requestPointerLock();
+            await this.#canvas.requestFullscreen(); 
+        });
         this.#resizeCanvas();
 
     }
 
 
 #clipNearPlane(camPts) {
-    const nearZ = 0.1;
+    const nearZ = 0.01;
     
     // Helper math to calculate the exact point where a line hits the glass
     const intersect = (p1, p2) => {
@@ -115,14 +118,16 @@ export class drlib {
 
         // Create the raw pixel buffer
         this.#backBuffer = this.#offscreenCtx.createImageData(this.#resWidth, this.#resHeight);
+        this.#zBuffer = new Float32Array(this.#resWidth * this.#resHeight).fill(Infinity);
        this.#pixels = this.#backBuffer.data; // 1D array of [R,G,B,A, R,G,B,A...]
-         this.#ctx.imageSmoothingEnabled = false; 
+        this.#zPixels = this.#zBuffer;
+        this.#ctx.imageSmoothingEnabled = false ; 
     }
 
     // CALL THIS AT THE START OF EVERY FRAME
     clear() {
-        // Fills the buffer with black super fast using a 32-bit view
-        new Uint32Array(this.#pixels.buffer).fill(this.clearColor); 
+        new Uint32Array(this.#pixels.buffer).fill(this.clearColor); //clears the pixel buffer 
+        new Float32Array(this.#zPixels.buffer).fill(Infinity);
     }
     initApplication(callback = () => {}) {
         callback();
@@ -140,8 +145,8 @@ export class drlib {
     // Projects a 3D coordinate into our integer Framebuffer coordinates
     #project(x, y) {
         // Maps your original float coordinates to exact integer pixels in the buffer
-        const pX = Math.floor(x * this.res) + Math.floor(this.#resWidth / 2);
-        const pY = Math.floor(y * this.res) + Math.floor(this.#resHeight / 2);
+        const pX = ~~(x * this.res) + ~~(this.#resWidth >> 1);
+        const pY = ~~(y * this.res) + ~~(this.#resHeight >> 1);
         return { x: pX, y: pY };
     }
 
@@ -197,6 +202,7 @@ export class drlib {
         const texW = texture.width, texH = texture.height;
         const texData = texture.data;
         const pixels = this.#pixels;
+        const zPixels = this.#zPixels;
         const resWidth = this.#resWidth;
 
         for (let y = minY; y <= maxY; y++) {
@@ -214,23 +220,30 @@ export class drlib {
 
                 const interpInvZ = (w0 * invZ0) + (w1 * invZ1) + (w2 * invZ2);
                 const zCorrect = 1.0 / interpInvZ;
-
                 let u = ((w0 * uz0) + (w1 * uz1) + (w2 * uz2)) * zCorrect;
                 let v = ((w0 * vz0) + (w1 * vz1) + (w2 * vz2)) * zCorrect;
 
-                u = u - Math.floor(u);
-                v = v - Math.floor(v);
+                u = u - (~~u);
+                v = v - (~~v);
 
                 const texX = ~~(u * texW);
                 const texY = ~~(v * texH);
                 const texIdx = (texY * texW + texX) * 4;
 
                 const bufferIdx = (y * resWidth + x) * 4;
+            if(zPixels[bufferIdx/4] > zCorrect && texData[texIdx + 3] > 0){
+                const alpha = texData[texIdx + 3] / 255;
+                const invAlpha = 1.0 - alpha;
 
-                pixels[bufferIdx]     = texData[texIdx];     
-                pixels[bufferIdx + 1] = texData[texIdx + 1]; 
-                pixels[bufferIdx + 2] = texData[texIdx + 2]; 
-                pixels[bufferIdx + 3] = 255;  
+                pixels[bufferIdx]     = texData[texIdx]     * alpha + pixels[bufferIdx]     * invAlpha;
+                pixels[bufferIdx + 1] = texData[texIdx + 1] * alpha + pixels[bufferIdx + 1] * invAlpha;
+                pixels[bufferIdx + 2] = texData[texIdx + 2] * alpha + pixels[bufferIdx + 2] * invAlpha;
+                pixels[bufferIdx + 3] = 255; // or also blend this if you need transparent canvas
+
+                if(alpha > 254/255){
+                    zPixels[bufferIdx/4] = zCorrect;
+                }
+            }
             }
         }
     }

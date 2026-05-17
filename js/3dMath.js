@@ -32,6 +32,7 @@ export function gimbal(pointI, rot, order = "xyz", origin={x:0, y:0, z:0}){
     let finalPoint = subVec3(pointI, origin);
 
     if(order.length != 3){
+        console.warn("order length too long; gonna give u back your point. Typo buddy?");
         return pointI;
     }
     for(let char of order){
