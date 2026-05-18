@@ -78,6 +78,12 @@ const wall6= new Plane({
     }
 });
 
+const dummyBill = new Billboard({
+    texture:develTex,
+    scale:{x:10, y:1, z:10}, 
+    facingObject:player
+});
+
 // Keep track of the last frame's time globally in your main file
 let lastTime = 0;
 let pause = false;
@@ -97,7 +103,7 @@ syn.loop = async (currentTime) => {
 
         wall6.updateRotation({x:currentTime*0.02, y:90, z:180});
         wall6.render(syn);
-
+        dummyBill.render(syn);
 
         player.controlCharacter(dt);
         Collision.rigidify(player, dt);

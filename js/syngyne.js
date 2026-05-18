@@ -27,7 +27,7 @@ export class syngyne {
     constructor() {
         this.pointerLockBroken = false;
         this.tick = 0;
-        this.res = 400; // Horizontal resolution (chunky pixels)
+        this.res = 350; // Horizontal resolution (chunky pixels)
         this.clearColor = 0x07000000
 
         // Setup main display canvas
@@ -248,9 +248,9 @@ export class syngyne {
                     const alpha = texData[texIdx + 3] / 255;
                     const invAlpha = 1.0 - alpha;
 
-                    pixels[bufferIdx]     = texData[texIdx]     * alpha + pixels[bufferIdx]     * invAlpha;
-                    pixels[bufferIdx + 1] = texData[texIdx + 1] * alpha + pixels[bufferIdx + 1] * invAlpha;
-                    pixels[bufferIdx + 2] = texData[texIdx + 2] * alpha + pixels[bufferIdx + 2] * invAlpha;
+                    pixels[bufferIdx]     = (texData[texIdx]     * alpha + pixels[bufferIdx]     * invAlpha) / Math.max(zCorrect/4, 0.89);
+                    pixels[bufferIdx + 1] = (texData[texIdx + 1] * alpha + pixels[bufferIdx + 1] * invAlpha) / Math.max(zCorrect/4, 0.89);
+                    pixels[bufferIdx + 2] = (texData[texIdx + 2] * alpha + pixels[bufferIdx + 2] * invAlpha) / Math.max(zCorrect/4, 0.89);
                     pixels[bufferIdx + 3] = 255; // or also blend this if you need transparent canvas
 
                     if(alpha > 254/255){

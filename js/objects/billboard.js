@@ -23,8 +23,8 @@ export class Billboard extends Plane{
 
         let triangles = this.getTriangles();
         let texture = this.getTexture();
-        drw.triangleTex(triangles[0], texture);
-        drw.triangleTex(triangles[1], texture);
+        syn.triangleTex(triangles[0], texture);
+        syn.triangleTex(triangles[1], texture);
     }
     getFacingObject(){ return this.#facingObject;}
 }
