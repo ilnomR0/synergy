@@ -1,28 +1,29 @@
-import {drlib} from "./drawlib.js";
+import {syngyne} from "./syngyne.js";
 import {Character} from "./character.js";
-import {Plane} from "./objects/objects.js";
+import {Plane} from "./objects/plane.js";
 import { Collision } from "./collision.js";
 import * as math3 from "./3dMath.js";
-let drw = new drlib();
-
+import { Billboard } from "./objects/billboard.js";
+let syn = new syngyne();
 
 let player = new Character();
-drw.setCamera(player.getCamera());
-const stoneTex = await drlib.loadTexture("./images/stone.png");
-const brickTex = await drlib.loadTexture("./images/brick.png");
-const errTex = await drlib.loadTexture("./images/err.png");
-const torchTex = await drlib.loadTexture("./images/torch.png");
-const develTex = await drlib.loadTexture("./images/devel0.png");
+syn.setCamera(player.getCamera());
+
+const stoneTex = await syngyne.loadTexture("./images/stone.png");
+const brickTex = await syngyne.loadTexture("./images/brick.png");
+const errTex = await syngyne.loadTexture("./images/err.png");
+const torchTex = await syngyne.loadTexture("./images/torch.png");
+const develTex = await syngyne.loadTexture("./images/devel0.png");
 
 const wall1= new Plane({
-    position:{x:0, y:2, z:0}, 
+    position:{x:0, y:5, z:0}, 
     scale:{x:100, y:1, z:10}, 
     texture:stoneTex,
     UV:{x:50, y:4}
 });
 
 const wall2= new Plane({
-    position:{x:0, y:5, z:-3}, 
+    position:{x:0, y:0, z:-5}, 
     scale:{x:100, y:1, z:10}, 
     texture:brickTex,
     UV:{x:50, y:4},
@@ -33,7 +34,7 @@ const wall2= new Plane({
     }
 });
 const wall3= new Plane({
-    position:{x:0, y:5, z:-3}, 
+    position:{x:0, y:0, z:5}, 
     scale:{x:100, y:1, z:10}, 
     texture:brickTex,
     UV:{x:50, y:4},
@@ -44,7 +45,7 @@ const wall3= new Plane({
     }
 });
 const wall4= new Plane({
-    position:{x:0, y:8, z:0}, 
+    position:{x:0, y:-5, z:0}, 
     scale:{x:100, y:1, z:10}, 
     texture:stoneTex,
     UV:{x:50, y:4},
@@ -55,7 +56,7 @@ const wall4= new Plane({
     }
 });
 const wall5= new Plane({
-    position:{x:0, y:50, z:-3}, 
+    position:{x:50, y:0, z:0}, 
     scale:{x:10, y:1, z:10}, 
     texture:brickTex,
     UV:{x:4, y:4},
@@ -66,7 +67,7 @@ const wall5= new Plane({
     }
 });
 const wall6= new Plane({
-    position:{x:0, y:50, z:-3}, 
+    position:{x:-50, y:0, z:0}, 
     scale:{x:10, y:1, z:10}, 
     texture:brickTex,
     UV:{x:4, y:4},
@@ -76,31 +77,36 @@ const wall6= new Plane({
         z:0
     }
 });
+
 // Keep track of the last frame's time globally in your main file
 let lastTime = 0;
 let pause = false;
-drw.loop = async (currentTime) => {
+syn.loop = async (currentTime) => {
     if(!pause){
         const dt = (currentTime - lastTime) / 1000 || 0; 
         lastTime = currentTime;
 
+        syn.clear();
+        wall1.render(syn);
+        wall2.render(syn);
+        wall3.render(syn);
+        wall4.render(syn);
+        wall5.render(syn);
+        wall6.updateRotation({x:currentTime*0.02, y:90, z:0});
+        wall6.render(syn);
 
-    drw.clear();
-        wall1.render(drw);
-        wall2.render(drw);
-        wall3.render(drw);
-        wall4.render(drw);
-        wall5.render(drw);
-        wall6.render(drw);
-        // 2. Pass dt into your controller
+        wall6.updateRotation({x:currentTime*0.02, y:90, z:180});
+        wall6.render(syn);
+
+
         player.controlCharacter(dt);
         Collision.rigidify(player, dt);
     }else{
 
     }
-    drw.present();
+    syn.present();
 
-    requestAnimationFrame(drw.loop);
+    requestAnimationFrame(syn.loop);
 };
 
-drw.initApplication();
+syn.initApplication();

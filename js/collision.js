@@ -18,7 +18,7 @@ export class Collision{
         object.position.x += object.velocity.x*dt;
         object.position.z += object.velocity.z*dt;
 
-        if(object.position.y >= -1){ //TEMPORARY COLLISION THINGS
+        if(object.position.y >= 1.5){ //TEMPORARY COLLISION THINGS
             object.position.y -=object.velocity.y*dt;
             object.velocity.y -= this.gravity.y*dt;
             object.velocity.y = 0;

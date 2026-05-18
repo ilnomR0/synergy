@@ -22,7 +22,7 @@ export class Character{
             z:0
         }
         this.sensitivity = 40;
-        this.mouseSensitivity = this.sensitivity/100;
+        this.mouseSensitivity = 1 * (navigator.userAgent.includes("Chrome") && navigator.userAgentData.platform == "Linux") ? .3 : 1;
         this.straif = 20;
         this.jumpForce = 15;
         this.timesJumped = 0;
@@ -38,9 +38,9 @@ export class Character{
         document.addEventListener("mousemove", (e)=>{
             this.#camera.rotation.x -= e.movementY * this.mouseSensitivity;
             this.rotation.y += e.movementX * this.mouseSensitivity;
-        this.#camera.rotation.x = Math.max(this.#camera.rotation.x, this.maxCameraX[0]);
-        this.#camera.rotation.x = Math.min(this.#camera.rotation.x, this.maxCameraX[1]);
-        this.#camera.rotation.z+=e.movementX/50;
+            this.#camera.rotation.x = Math.max(this.#camera.rotation.x, this.maxCameraX[0]);
+            this.#camera.rotation.x = Math.min(this.#camera.rotation.x, this.maxCameraX[1]);
+            this.#camera.rotation.z+=e.movementX/50;
         });
     }
     controlCharacter(dt) {
@@ -57,7 +57,7 @@ export class Character{
             this.velocity.x += Math.sin((this.rotation.y + 90) * Math.PI / 180) * currentSpeed/(this.onGround ? 1 : this.straif);
             this.#camera.rotation.z-=dt*50;
         }
-        if (this.activeKeys[" "] && this.onGround && this.timesJumped<=100) {
+        if (this.activeKeys[" "] && this.onGround && this.timesJumped<=0) {
             this.velocity.y = -this.jumpForce;
             this.timesJumped++;
         }else if(!this.activeKeys[" "] && this.timesJumped > 0 && this.onGround){
@@ -79,21 +79,16 @@ export class Character{
         }
         if (this.activeKeys["ArrowUp"]) {
             this.#camera.rotation.x += currentSensitivity;
-        this.#camera.rotation.x = Math.max(this.#camera.rotation.x, this.maxCameraX[0]);
-        this.#camera.rotation.x = Math.min(this.#camera.rotation.x, this.maxCameraX[1]);
+            this.#camera.rotation.x = Math.max(this.#camera.rotation.x, this.maxCameraX[0]);
+            this.#camera.rotation.x = Math.min(this.#camera.rotation.x, this.maxCameraX[1]);
         }
         if (this.activeKeys["ArrowDown"]) {
             this.#camera.rotation.x -= currentSensitivity;
-        this.#camera.rotation.x = Math.max(this.#camera.rotation.x, this.maxCameraX[0]);
-        this.#camera.rotation.x = Math.min(this.#camera.rotation.x, this.maxCameraX[1]);
+            this.#camera.rotation.x = Math.max(this.#camera.rotation.x, this.maxCameraX[0]);
+            this.#camera.rotation.x = Math.min(this.#camera.rotation.x, this.maxCameraX[1]);
         }
         if(this.activeKeys['p']) {
-            this.#camera.fov++;
-            console.log(this.#camera.fov);
-        }
-        if(this.activeKeys[';']){
-            this.#camera.fov--;
-            console.log(this.#camera.fov);
+            console.log(this.#camera.rotation);
         }
 
 
@@ -104,5 +99,6 @@ export class Character{
     getCamera(){
         return this.#camera;
     }
-
+    getPosition(){ return this.position};
+    getRotation(){ return this.rotation};
 }

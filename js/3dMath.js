@@ -66,3 +66,8 @@ export function subVec3(vec1, vec2){
         y:vec1.y - vec2.y,
         z:vec1.z - vec2.z}
 }
+export function addVec3(vec1, vec2){
+    return {x:vec1.x + vec2.x,
+        y:vec1.y + vec2.y,
+        z:vec1.z + vec2.z}
+}
