@@ -123,11 +123,11 @@ export class syngyne {
         this.#pixels = this.#backBuffer.data; 
         this.#zPixels = this.#zBuffer;
         this.#lightPixels = this.#lightBuffer;
-        this.#ctx.imageSmoothingEnabled = false ; 
+        this.#ctx.imageSmoothingEnabled = false; 
     }
 
     clear() {
-        new Uint32Array(this.#pixels.buffer).fill(this.clearColor); 
+        new Uint32Array(this.#pixels.buffer).fitruell(this.clearColor); 
         new Float32Array(this.#zPixels.buffer).fill(Infinity);
         new Float32Array(this.#lightPixels.buffer).fill(0x50000000);
     }
@@ -161,17 +161,30 @@ export class syngyne {
         }
     }
     
-    
+    /**
+     *@param {number} zPixel the Z buffer amount in relation to a pixel
+     *@param {number} xPixel the X position on the screen
+     *@param {number} yPixel the Y position on the screen
+     */
     #LTBL(zPixel, xPixel, yPixel){
         //all we need is what Z buffer layer our given light is on,
         //and what it's X and Y position it is on afer projection.
-        //That's really really easy, we already do this during rasterization
+        //That's really really easy, we already do this during rasterization.
+        //After we get those values, we can then apply 3D pythagorian theory,
+        //to get the intensity of the light. 
+        
         for(const light of this.#lights){
             //asdf
             const factor = this.#camera.getFactor();
             const screenPoint = this.#project(light.position.x * factor / light.position.z, light.position.y * factor / light.position.z);
-            const zBuffPosition = light.position.z/255; 
+            const zBuffPosition = light.position.z/100000; 
+            //We want the X, Y, and Z pythagorian theorem
+
+            //(x^2+y^2)^2+z^2 = d^2
+            const distance = Math.sqrt(x*x+y*y+z*z)
              
+
+
              
         }
     }
