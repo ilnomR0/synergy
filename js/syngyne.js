@@ -29,7 +29,7 @@ export class syngyne {
     constructor() {
         this.pointerLockBroken = false;
         this.tick = 0;
-        this.res = 200; // Horizontal resolution (chunky pixels)
+        this.res = 400; // Horizontal resolution (chunky pixels)
         this.clearColor = 0x07000000
 
         this.#canvas = document.createElement("canvas");
@@ -127,7 +127,7 @@ export class syngyne {
     }
 
     clear() {
-        new Uint32Array(this.#pixels.buffer).fitruell(this.clearColor); 
+        new Uint32Array(this.#pixels.buffer).fill(this.clearColor); 
         new Float32Array(this.#zPixels.buffer).fill(Infinity);
         new Float32Array(this.#lightPixels.buffer).fill(0x50000000);
     }
@@ -255,9 +255,9 @@ export class syngyne {
                 if(zPixels[bufferIdx/4] > zCorrect && texData[texIdx + 3] > 0){
                     const alpha = texData[texIdx + 3] / 255;
                     const invAlpha = 1.0 - alpha;
-                    pixels[bufferIdx]     = (texData[texIdx]     * alpha + pixels[bufferIdx]     * invAlpha); 
-                    pixels[bufferIdx + 1] = (texData[texIdx + 1] * alpha + pixels[bufferIdx + 1] * invAlpha); 
-                    pixels[bufferIdx + 2] = (texData[texIdx + 2] * alpha + pixels[bufferIdx + 2] * invAlpha); 
+                    pixels[bufferIdx]     = (texData[texIdx]     * alpha + pixels[bufferIdx]     * invAlpha) -zCorrect*2; 
+                    pixels[bufferIdx + 1] = (texData[texIdx + 1] * alpha + pixels[bufferIdx + 1] * invAlpha) -zCorrect*5; 
+                    pixels[bufferIdx + 2] = (texData[texIdx + 2] * alpha + pixels[bufferIdx + 2] * invAlpha)-zCorrect*10; 
                     pixels[bufferIdx + 3] = 255; // or also blend this if you need transparent canvas
 
                     if(alpha > 254/255){

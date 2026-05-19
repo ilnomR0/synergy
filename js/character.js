@@ -22,7 +22,7 @@ export class Character{
             z:0
         }
         this.sensitivity = 40;
-        this.mouseSensitivity = 1 * (navigator.userAgent.includes("Chrome") && navigator.userAgentData.platform == "Linux") ? .3 : 1;
+        this.mouseSensitivity = this.sensitivity/40 * (navigator.userAgent.includes("Chrome") && navigator.userAgentData.platform == "Linux") ? .3 : 1;
         this.straif = 20;
         this.jumpForce = 15;
         this.timesJumped = 0;
@@ -87,8 +87,11 @@ export class Character{
             this.#camera.rotation.x = Math.max(this.#camera.rotation.x, this.maxCameraX[0]);
             this.#camera.rotation.x = Math.min(this.#camera.rotation.x, this.maxCameraX[1]);
         }
-        if(this.activeKeys['p']) {
-            console.log(this.#camera.rotation);
+        if(this.activeKeys['i']) {
+            this.sensitivity+=0.1;
+        }
+        if(this.activeKeys['k']){
+            this.sensitivity-=0.1;
         }
 
 
