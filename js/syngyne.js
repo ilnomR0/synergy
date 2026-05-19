@@ -17,15 +17,19 @@ export class syngyne {
     #offscreenCtx;
     #backBuffer;
     #zBuffer;
+    #lightBuffer;
     #pixels;
     #zPixels;
+    #lightPixels;
     #resWidth;
     #resHeight;
     #pointerLockBroken;
+    #lights = [];
+
     constructor() {
         this.pointerLockBroken = false;
         this.tick = 0;
-        this.res = 300; // Horizontal resolution (chunky pixels)
+        this.res = 200; // Horizontal resolution (chunky pixels)
         this.clearColor = 0x07000000
 
         this.#canvas = document.createElement("canvas");
@@ -115,14 +119,17 @@ export class syngyne {
 
         this.#backBuffer = this.#offscreenCtx.createImageData(this.#resWidth, this.#resHeight);
         this.#zBuffer = new Float32Array(this.#resWidth * this.#resHeight).fill(Infinity);
+        this.#lightBuffer = new Float32Array((this.#resWidth * this.#resHeight)*4).fill(Infinity);
         this.#pixels = this.#backBuffer.data; 
         this.#zPixels = this.#zBuffer;
+        this.#lightPixels = this.#lightBuffer;
         this.#ctx.imageSmoothingEnabled = false ; 
     }
 
     clear() {
         new Uint32Array(this.#pixels.buffer).fill(this.clearColor); 
         new Float32Array(this.#zPixels.buffer).fill(Infinity);
+        new Float32Array(this.#lightPixels.buffer).fill(0x50000000);
     }
     initApplication(callback = () => {}) {
         callback();
@@ -153,6 +160,22 @@ export class syngyne {
             this.#rasterizeTriangle(tri, texture);
         }
     }
+    
+    
+    #LTBL(zPixel, xPixel, yPixel){
+        //all we need is what Z buffer layer our given light is on,
+        //and what it's X and Y position it is on afer projection.
+        //That's really really easy, we already do this during rasterization
+        for(const light of this.#lights){
+            //asdf
+            const factor = this.#camera.getFactor();
+            const screenPoint = this.#project(light.position.x * factor / light.position.z, light.position.y * factor / light.position.z);
+            const zBuffPosition = light.position.z/255; 
+             
+             
+        }
+    }
+
     #rasterizeTriangle(camPts, texture) {
         const pts = [];
         const zVals = [];
@@ -219,9 +242,9 @@ export class syngyne {
                 if(zPixels[bufferIdx/4] > zCorrect && texData[texIdx + 3] > 0){
                     const alpha = texData[texIdx + 3] / 255;
                     const invAlpha = 1.0 - alpha;
-                    pixels[bufferIdx]     = (texData[texIdx]     * alpha + pixels[bufferIdx]     * invAlpha) / Math.max(zCorrect/4, 0.89);
-                    pixels[bufferIdx + 1] = (texData[texIdx + 1] * alpha + pixels[bufferIdx + 1] * invAlpha) / Math.max(zCorrect/4, 0.89);
-                    pixels[bufferIdx + 2] = (texData[texIdx + 2] * alpha + pixels[bufferIdx + 2] * invAlpha) / Math.max(zCorrect/4, 0.89);
+                    pixels[bufferIdx]     = (texData[texIdx]     * alpha + pixels[bufferIdx]     * invAlpha); 
+                    pixels[bufferIdx + 1] = (texData[texIdx + 1] * alpha + pixels[bufferIdx + 1] * invAlpha); 
+                    pixels[bufferIdx + 2] = (texData[texIdx + 2] * alpha + pixels[bufferIdx + 2] * invAlpha); 
                     pixels[bufferIdx + 3] = 255; // or also blend this if you need transparent canvas
 
                     if(alpha > 254/255){
@@ -253,4 +276,5 @@ export class syngyne {
     getCtx() { return this.#ctx; }
     getCanvas() { return this.#canvas; }
     getBroken() {return this.#pointerLockBroken; }
+    addLight(light){this.#lights.push(light)};
 }
