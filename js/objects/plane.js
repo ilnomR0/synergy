@@ -1,20 +1,16 @@
 import * as math3 from "../3dMath.js";
+import { Object } from "./object.js";
 
-export class Plane{
-    #position;
-    #scale;
+export class Plane extends Object{
+    #UV = {x:1, y:1};
     #texture;
-    #rotation;
-    #rotFormat;
+
     #vertexPositions;
     #triangles;
-    #UV;
-    constructor({position={x:0,y:0,z:0}, scale = {x:1, y:1, z:1}, texture, UV={x:1,y:1}, rotation={x:0,y:0,z:0}, rotFormat="xyz"}){
-        this.#position = position;
-        this.#scale = scale;
+    
+    constructor({velocity = {position:{x:0, y:0, z:0}, rotation:{x:0, y:0, z:0}}, position={x:0,y:0,z:0}, scale = {x:1, y:1, z:1}, texture, UV={x:1,y:1}, rotation={x:0,y:0,z:0}, rotFormat="xyz"}){
+        super({position, scale, rotation, velocity, rotFormat})
         this.#texture = texture;
-        this.#rotation = rotation;
-        this.#rotFormat= rotFormat;
         this.#UV = UV;
         this.#updateVertexPositions();
         this.lockedAxis={
@@ -22,6 +18,7 @@ export class Plane{
             y:false,
             z:false
         }
+    
     }
 
     render(drw){
@@ -30,11 +27,19 @@ export class Plane{
     }
 
     #updateVertexPositions(){
+        const scale = this.getScale();
+        const rotation = this.getRotation();
+        const rotFormat = this.getRotFormat();
+        const position = this.getPosition();
+
+
+        //i'm lay z ok?
+       
         this.#vertexPositions = [
-            math3.addVec3(math3.gimbal({x:0.5*this.#scale.x+0, y:0, z:0.5*this.#scale.z+0}, this.#rotation, this.#rotFormat), this.#position),
-            math3.addVec3(math3.gimbal({x:-0.5*this.#scale.x+0, y:0, z:-0.5*this.#scale.z+0}, this.#rotation, this.#rotFormat), this.#position),
-            math3.addVec3(math3.gimbal({x:-0.5*this.#scale.x+0, y:0, z:0.5*this.#scale.z+0}, this.#rotation, this.#rotFormat), this.#position),
-            math3.addVec3(math3.gimbal({x:0.5*this.#scale.x+0, y:0, z:-0.5*this.#scale.z+0}, this.#rotation, this.#rotFormat), this.#position),
+            math3.addVec3(math3.gimbal({x:0.5*scale.x+0, y:0, z:0.5*scale.z+0}, rotation, rotFormat), position),
+            math3.addVec3(math3.gimbal({x:-0.5*scale.x+0, y:0, z:-0.5*scale.z+0}, rotation, rotFormat), position),
+            math3.addVec3(math3.gimbal({x:-0.5*scale.x+0, y:0, z:0.5*scale.z+0}, rotation, rotFormat), position),
+            math3.addVec3(math3.gimbal({x:0.5*scale.x+0, y:0, z:-0.5*scale.z+0}, rotation, rotFormat), position),
         ]; 
         this.#triangles = [
             [
@@ -50,28 +55,42 @@ export class Plane{
             ]
         ]
     }
-
+    /**
+     * @param {Vec3} position 
+     */
     updatePosition(position){
-        this.#position = position;
+        super.updatePosition(position);
         this.#updateVertexPositions();
     }
+    /**
+     * @param {Vec3} rotation 
+     */
     updateRotation(rotation){
-        this.#rotation.x = this.lockedAxis.x ? this.#rotation.x : rotation.x;
-        this.#rotation.y = this.lockedAxis.y ? this.#rotation.y : rotation.y;
-        this.#rotation.z = this.lockedAxis.z ? this.#rotation.z : rotation.z;
+        super.updateRotation(rotation);
         this.#updateVertexPositions();
     }
+    /**
+     * @param {Vec3} scale 
+     */
     updateScale(scale){
-        this.#scale = scale;
+        super.updateScale(scale);
         this.#updateVertexPositions();
     }
-    getRotation(){return this.#rotation};
-    getPosition(){return this.#position};
-    getScale(){return this.#scale};
+    /**
+     * @param {ImageData} texture 
+     */
+    updateTexture(texture){
+        this.#texture = texture;
+        this.#updateVertexPositions();
+    }
+    applyVelocity(){
+        super.applyVelocity();
+        this.#updateVertexPositions();
+    }
     getTriangles(){return this.#triangles};
     getVertexPositions(){return this.#vertexPositions};
     getTexture(){return this.#texture};
-    
+
 }
 
 

@@ -15,7 +15,7 @@ export class Character{
             y:55,
             z:0
         }
-        this.speed = 1.5;
+        this.speed = 150;
         this.velocity = {
             x:0,
             y:0,
@@ -48,28 +48,28 @@ export class Character{
         const currentSensitivity = this.sensitivity*5 * dt;
 
         if (this.activeKeys["a"]) {
-            this.velocity.z += Math.cos((this.rotation.y - 90) * Math.PI / 180) * currentSpeed/(this.onGround ? 1 : this.straif);
-            this.velocity.x += Math.sin((this.rotation.y - 90) * Math.PI / 180) * currentSpeed/(this.onGround ? 1 : this.straif);
-            this.#camera.rotation.z+=dt*50;
+            this.velocity.z += Math.cos((this.rotation.y - 90) * Math.PI / 180) * (currentSpeed*dt)/(this.onGround ? 1 : this.straif);
+            this.velocity.x += Math.sin((this.rotation.y - 90) * Math.PI / 180) * (currentSpeed*dt)/(this.onGround ? 1 : this.straif);
+            this.#camera.rotation.z+=50*dt;
         }
         if (this.activeKeys["d"]) {
-            this.velocity.z += Math.cos((this.rotation.y + 90) * Math.PI / 180) * currentSpeed/(this.onGround ? 1 : this.straif);
-            this.velocity.x += Math.sin((this.rotation.y + 90) * Math.PI / 180) * currentSpeed/(this.onGround ? 1 : this.straif);
-            this.#camera.rotation.z-=dt*50;
+            this.velocity.z += Math.cos((this.rotation.y + 90) * Math.PI / 180) * (currentSpeed*dt)/(this.onGround ? 1 : this.straif);
+            this.velocity.x += Math.sin((this.rotation.y + 90) * Math.PI / 180) * (currentSpeed*dt)/(this.onGround ? 1 : this.straif);
+            this.#camera.rotation.z-=50*dt;
         }
-        if (this.activeKeys[" "] && this.onGround && this.timesJumped<=0) {
+        if (this.activeKeys[" "] && this.onGround && this.timesJumped<=1000) {
             this.velocity.y = -this.jumpForce;
             this.timesJumped++;
         }else if(!this.activeKeys[" "] && this.timesJumped > 0 && this.onGround){
             this.timesJumped--
         }
         if (this.activeKeys["w"]) {
-            this.velocity.z += Math.cos(this.rotation.y * Math.PI / 180) * currentSpeed/(this.onGround ? 1 : this.straif);
-            this.velocity.x += Math.sin(this.rotation.y * Math.PI / 180) * currentSpeed/(this.onGround ? 1 : this.straif);
+            this.velocity.z += Math.cos(this.rotation.y * Math.PI / 180) * (currentSpeed*dt)/(this.onGround ? 1 : this.straif);
+            this.velocity.x += Math.sin(this.rotation.y * Math.PI / 180) * (currentSpeed*dt)/(this.onGround ? 1 : this.straif);
         }
         if (this.activeKeys["s"]) {
-            this.velocity.z -= Math.cos(this.rotation.y * Math.PI / 180) * currentSpeed/(this.onGround ? 1 : this.straif);
-            this.velocity.x -= Math.sin(this.rotation.y * Math.PI / 180) * currentSpeed/(this.onGround ? 1 : this.straif);
+            this.velocity.z -= Math.cos(this.rotation.y * Math.PI / 180) * (currentSpeed*dt)/(this.onGround ? 1 : this.straif);
+            this.velocity.x -= Math.sin(this.rotation.y * Math.PI / 180) * (currentSpeed*dt)/(this.onGround ? 1 : this.straif);
         }
         if (this.activeKeys["ArrowLeft"]) {
             this.rotation.y -= currentSensitivity;
@@ -94,7 +94,7 @@ export class Character{
 
         this.#camera.position = this.position;
         this.#camera.rotation.y = this.rotation.y;
-        this.#camera.rotation.z /=150*dt;
+        this.#camera.rotation.z *= Math.pow(0.02, dt);
     }
     getCamera(){
         return this.#camera;

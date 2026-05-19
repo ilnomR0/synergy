@@ -1,5 +1,3 @@
-import * as Math3 from "./3dMath.js";
-
 /**
  *----------------THE SYNERGY ENGINE--------------
  * it's a very nice very cool engine written from
@@ -27,10 +25,9 @@ export class syngyne {
     constructor() {
         this.pointerLockBroken = false;
         this.tick = 0;
-        this.res = 350; // Horizontal resolution (chunky pixels)
+        this.res = 300; // Horizontal resolution (chunky pixels)
         this.clearColor = 0x07000000
 
-        // Setup main display canvas
         this.#canvas = document.createElement("canvas");
         this.#canvas.style.position = "absolute";
         this.#canvas.style.top = "0";
@@ -39,17 +36,15 @@ export class syngyne {
         this.#canvas.style.height = "100%";
         this.#canvas.style.backgroundColor = "black";
         this.#ctx = this.#canvas.getContext("2d");
-
-        // Crucial for chunky pixel scaling: disable smoothing
+        this.renderMethod = "wireframe";
         document.body.appendChild(this.#canvas);
 
-        // Setup offscreen canvas for the framebuffer
         this.#offscreenCanvas = document.createElement("canvas");
         this.#offscreenCtx = this.#offscreenCanvas.getContext("2d", { willReadFrequently: true });
 
         window.addEventListener("resize", () => { this.#resizeCanvas() });
         this.#canvas.addEventListener("click", async () => {
-            
+
             await this.#canvas.requestPointerLock({unadjustedMovement:true }).catch(()=>{
                 this.#canvas.requestPointerLock();
             });
@@ -63,7 +58,6 @@ export class syngyne {
     #clipNearPlane(camPts) {
         const nearZ = 0.01;
 
-        // Helper math to calculate the exact point where a line hits the glass
         const intersect = (p1, p2) => {
             const t = (nearZ - p1.z) / (p2.z - p1.z);
             return {
@@ -79,41 +73,32 @@ export class syngyne {
 
         const outPts = [];
 
-        // Iterate through the edges sequentially to preserve winding order!
         for (let i = 0; i < 3; i++) {
             const cur = camPts[i];
-            const next = camPts[(i + 1) % 3]; // Wraps back to 0 on the last step
+            const next = camPts[(i + 1) % 3]; 
 
             const curInside = cur.z >= nearZ;
             const nextInside = next.z >= nearZ;
 
             if (curInside && nextInside) {
-                // Both points safe: just add the target point
                 outPts.push(next);
             } else if (curInside && !nextInside) {
-                // Leaving the safe zone: calculate where it hits the glass
                 outPts.push(intersect(cur, next));
             } else if (!curInside && nextInside) {
-                // Re-entering the safe zone: add glass intersection, then safe point
                 outPts.push(intersect(cur, next));
                 outPts.push(next);
             } 
-            // If both are outside, we do nothing and draw nothing.
         }
 
-        // Now, assemble the clipped polygon back into triangles for the rasterizer
         if (outPts.length === 3) {
-            // It's a perfect triangle
             return [outPts];
         } else if (outPts.length === 4) {
-            // It's a quad! Triangulate it into two triangles (Fan method)
             return [
                 [outPts[0], outPts[1], outPts[2]],
                 [outPts[0], outPts[2], outPts[3]]
             ];
         }
 
-        // If it's 0, 1, or 2 points, it's either invisible or a useless line.
         return []; 
     }
 
@@ -121,7 +106,6 @@ export class syngyne {
         this.#canvas.width = window.innerWidth;
         this.#canvas.height = window.innerHeight;
 
-        // Calculate aspect-ratio-correct vertical resolution
         this.aspect = window.innerHeight / window.innerWidth;
         this.#resWidth = this.res;
         this.#resHeight = this.res*this.aspect;
@@ -129,53 +113,42 @@ export class syngyne {
         this.#offscreenCanvas.width = this.#resWidth;
         this.#offscreenCanvas.height = this.#resHeight;
 
-        // Create the raw pixel buffer
         this.#backBuffer = this.#offscreenCtx.createImageData(this.#resWidth, this.#resHeight);
         this.#zBuffer = new Float32Array(this.#resWidth * this.#resHeight).fill(Infinity);
-        this.#pixels = this.#backBuffer.data; // 1D array of [R,G,B,A, R,G,B,A...]
+        this.#pixels = this.#backBuffer.data; 
         this.#zPixels = this.#zBuffer;
         this.#ctx.imageSmoothingEnabled = false ; 
     }
 
-    // CALL THIS AT THE START OF EVERY FRAME
     clear() {
-        new Uint32Array(this.#pixels.buffer).fill(this.clearColor); //clears the pixel buffer 
+        new Uint32Array(this.#pixels.buffer).fill(this.clearColor); 
         new Float32Array(this.#zPixels.buffer).fill(Infinity);
     }
     initApplication(callback = () => {}) {
         callback();
-        // Start the loop. (Make sure you assign drw.loop before calling this!)
         requestAnimationFrame((tick) => this.loop(tick));
     }
-    // CALL THIS AT THE END OF EVERY FRAME
     present() {
-        // 1. Put the raw pixel data onto the tiny offscreen canvas
         this.#offscreenCtx.putImageData(this.#backBuffer, 0, 0);
-        // 2. Hardware-scale the tiny canvas onto the massive main canvas
         this.#ctx.drawImage(this.#offscreenCanvas, 0, 0, this.#canvas.width, this.#canvas.height);
     }
 
-    // Projects a 3D coordinate into our integer Framebuffer coordinates
     #project(x, y) {
-        // Maps your original float coordinates to exact integer pixels in the buffer
         const pX = ~~(x * this.res) + ~~(this.#resWidth >> 1);
         const pY = ~~(y * this.res) + ~~(this.#resHeight >> 1);
         return { x: pX, y: pY };
     }
 
     triangleTex(array, texture) {
-        // 1. Transform world coordinates to camera coordinates
         let camPts = [];
         for (let i = 0; i < 3; i++) {
             const cp = this.#camera.transformPoints(array[i]);
-            cp.uv = array[i].uv; // Make sure to carry the UV data over!
+            cp.uv = array[i].uv; 
             camPts.push(cp);
         }
 
-        // 2. Chop the triangle against the near plane
         const validTriangles = this.#clipNearPlane(camPts);
 
-        // 3. Project and draw whatever pieces survived the cut
         for (const tri of validTriangles) {
             this.#rasterizeTriangle(tri, texture);
         }
@@ -184,7 +157,6 @@ export class syngyne {
         const pts = [];
         const zVals = [];
 
-        // Project the completely safe, clipped camera points to the screen
         for (let i = 0; i < 3; i++) {
             const factor = this.#camera.getFactor();
             const proj = this.#project(camPts[i].x * factor / camPts[i].z, camPts[i].y * factor / camPts[i].z);
@@ -247,7 +219,6 @@ export class syngyne {
                 if(zPixels[bufferIdx/4] > zCorrect && texData[texIdx + 3] > 0){
                     const alpha = texData[texIdx + 3] / 255;
                     const invAlpha = 1.0 - alpha;
-
                     pixels[bufferIdx]     = (texData[texIdx]     * alpha + pixels[bufferIdx]     * invAlpha) / Math.max(zCorrect/4, 0.89);
                     pixels[bufferIdx + 1] = (texData[texIdx + 1] * alpha + pixels[bufferIdx + 1] * invAlpha) / Math.max(zCorrect/4, 0.89);
                     pixels[bufferIdx + 2] = (texData[texIdx + 2] * alpha + pixels[bufferIdx + 2] * invAlpha) / Math.max(zCorrect/4, 0.89);

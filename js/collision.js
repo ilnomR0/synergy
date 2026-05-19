@@ -24,12 +24,12 @@ export class Collision{
             object.velocity.y = 0;
             object.onGround = true;
 
-            object.velocity.x /=1.1;
-            object.velocity.z /=1.1;
+            object.velocity.x *=Math.pow(0.0002, dt);
+            object.velocity.z *=Math.pow(0.0002, dt);
         }else{
             object.onGround = false;
-            object.velocity.x /=1.002;
-            object.velocity.z /=1.002;
+            object.velocity.x *=Math.pow(0.7, dt);
+            object.velocity.z *=Math.pow(0.7, dt);
         }
     }
 }

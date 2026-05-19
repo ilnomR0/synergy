@@ -2,8 +2,7 @@ import {syngyne} from "./syngyne.js";
 import {Character} from "./character.js";
 import {Plane} from "./objects/plane.js";
 import { Collision } from "./collision.js";
-import * as math3 from "./3dMath.js";
-import { Billboard } from "./objects/billboard.js";
+import { ParticleGenerator } from "./objects/particleGenerator.js";
 let syn = new syngyne();
 
 let player = new Character();
@@ -14,6 +13,7 @@ const brickTex = await syngyne.loadTexture("./images/brick.png");
 const errTex = await syngyne.loadTexture("./images/err.png");
 const torchTex = await syngyne.loadTexture("./images/torch.png");
 const develTex = await syngyne.loadTexture("./images/devel0.png");
+const fireTex = await syngyne.loadTexture("./images/fire.png");
 
 const wall1= new Plane({
     position:{x:0, y:5, z:0}, 
@@ -75,15 +75,24 @@ const wall6= new Plane({
         x:90,
         y:-90,
         z:0
+    },
+    velocity:{
+        rotation:{
+            x:0.02,
+            y:0,
+            z:0
+        }
     }
 });
 
-const dummyBill = new Billboard({
-    texture:develTex,
-    scale:{x:10, y:1, z:10}, 
-    facingObject:player
-});
-
+const superCoolParticleGenerator = new ParticleGenerator({
+    facingObject:player,
+    textures:[fireTex],
+    particleCount:1000,
+    maxLifetime:900,
+    particleRate:100,
+    position:{x:0, y:4.5, z:-10}
+})
 // Keep track of the last frame's time globally in your main file
 let lastTime = 0;
 let pause = false;
@@ -103,7 +112,8 @@ syn.loop = async (currentTime) => {
 
         wall6.updateRotation({x:currentTime*0.02, y:90, z:180});
         wall6.render(syn);
-        dummyBill.render(syn);
+
+        superCoolParticleGenerator.render(syn);
 
         player.controlCharacter(dt);
         Collision.rigidify(player, dt);

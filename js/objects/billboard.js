@@ -3,8 +3,8 @@ import { Plane } from "./plane.js";
 export class Billboard extends Plane{
 
     #facingObject;
-    constructor({position={x:0,y:0,z:0}, scale = {x:1, y:1, z:1}, texture, UV={x:1,y:1}, rotation={x:0,y:0,z:0}, rotFormat="xyz", facingObject}){
-        super({position, scale, texture, UV, rotation, rotFormat});
+    constructor({velocity = {position:{x:0, y:0, z:0}, rotation:{x:0, y:0, z:0}}, position={x:0,y:0,z:0}, scale = {x:1, y:1, z:1}, texture, UV={x:1,y:1}, rotation={x:0,y:0,z:0}, rotFormat="xyz", facingObject}){
+        super({position, scale, texture, UV, rotation, rotFormat, velocity });
         this.#facingObject = facingObject;
     }
     render(syn){
@@ -21,10 +21,7 @@ export class Billboard extends Plane{
             y:(Math.atan2(distZ,distX)*(180/Math.PI))+90
         });
 
-        let triangles = this.getTriangles();
-        let texture = this.getTexture();
-        syn.triangleTex(triangles[0], texture);
-        syn.triangleTex(triangles[1], texture);
+        super.render(syn);
     }
     getFacingObject(){ return this.#facingObject;}
 }
