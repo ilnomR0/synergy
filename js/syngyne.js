@@ -17,6 +17,7 @@ export class syngyne {
     #offscreenCtx;
     #backBuffer;
     #zBuffer;
+    /** @type{Float32Array}*/
     #lightBuffer;
     #pixels;
     #zPixels;
@@ -29,8 +30,8 @@ export class syngyne {
     constructor() {
         this.pointerLockBroken = false;
         this.tick = 0;
-        this.res = 400; // Horizontal resolution (chunky pixels)
-        this.clearColor = 0x07000000
+        this.res = 320; // Horizontal resolution (chunky pixels)
+        this.clearColor = 0xff000000
 
         this.#canvas = document.createElement("canvas");
         this.#canvas.style.position = "absolute";
@@ -129,7 +130,7 @@ export class syngyne {
     clear() {
         new Uint32Array(this.#pixels.buffer).fill(this.clearColor); 
         new Float32Array(this.#zPixels.buffer).fill(Infinity);
-        new Float32Array(this.#lightPixels.buffer).fill(0x50000000);
+        new Float32Array(this.#lightBuffer.buffer).fill(0x000000);
     }
     initApplication(callback = () => {}) {
         callback();
@@ -160,32 +161,35 @@ export class syngyne {
             this.#rasterizeTriangle(tri, texture);
         }
     }
-    
+
     /**
      *@param {number} zPixel the Z buffer amount in relation to a pixel
      *@param {number} xPixel the X position on the screen
      *@param {number} yPixel the Y position on the screen
      */
-    #LTBL(zPixel, xPixel, yPixel){
-        //all we need is what Z buffer layer our given light is on,
-        //and what it's X and Y position it is on afer projection.
-        //That's really really easy, we already do this during rasterization.
-        //After we get those values, we can then apply 3D pythagorian theory,
-        //to get the intensity of the light. 
-        
+    #LTBL(zCorrect, xPixel, yPixel){
+        const factor = this.#camera.getFactor();
+        const halfW = this.#resWidth >> 1;
+        const halfH = this.#resHeight >> 1;
+
+        // unproject pixel back to camera space
+        const pixelCamX = (xPixel - halfW) / this.res * zCorrect / factor;
+        const pixelCamY = (yPixel - halfH) / this.res * zCorrect / factor;
+        const pixelCamZ = zCorrect;
         for(const light of this.#lights){
-            //asdf
-            const factor = this.#camera.getFactor();
-            const screenPoint = this.#project(light.position.x * factor / light.position.z, light.position.y * factor / light.position.z);
-            const zBuffPosition = light.position.z/100000; 
-            //We want the X, Y, and Z pythagorian theorem
+            const camSpacePos = this.#camera.transformPoints(light.getPosition());
 
-            //(x^2+y^2)^2+z^2 = d^2
-            const distance = Math.sqrt(x*x+y*y+z*z)
-             
+            const dx = pixelCamX - camSpacePos.x;
+            const dy = pixelCamY - camSpacePos.y;
+            const dz = pixelCamZ - camSpacePos.z;
 
+            const distSq = dx*dx + dy*dy + dz*dz;
+            const intensity = light.getRadius() / distSq; 
 
-             
+            const idx = yPixel * this.#resWidth + xPixel;
+            this.#lightBuffer[idx*3]     += intensity * light.getColor().r;
+            this.#lightBuffer[idx*3 + 1] += intensity * light.getColor().g;
+            this.#lightBuffer[idx*3 + 2] += intensity * light.getColor().b;
         }
     }
 
@@ -250,14 +254,17 @@ export class syngyne {
                 const texX = ~~(u * texW);
                 const texY = ~~(v * texH);
                 const texIdx = (texY * texW + texX) * 4;
-
+                this.#LTBL(zCorrect, x, y)
                 const bufferIdx = (y * resWidth + x) * 4;
                 if(zPixels[bufferIdx/4] > zCorrect && texData[texIdx + 3] > 0){
                     const alpha = texData[texIdx + 3] / 255;
                     const invAlpha = 1.0 - alpha;
-                    pixels[bufferIdx]     = (texData[texIdx]     * alpha + pixels[bufferIdx]     * invAlpha) -zCorrect*2; 
-                    pixels[bufferIdx + 1] = (texData[texIdx + 1] * alpha + pixels[bufferIdx + 1] * invAlpha) -zCorrect*5; 
-                    pixels[bufferIdx + 2] = (texData[texIdx + 2] * alpha + pixels[bufferIdx + 2] * invAlpha)-zCorrect*10; 
+                   
+                    const lightIdx = (y * resWidth + x) * 3;
+                    
+                    pixels[bufferIdx]     = (texData[texIdx]     * alpha + pixels[bufferIdx]     * invAlpha) * this.#lightBuffer[lightIdx];
+                    pixels[bufferIdx + 1] = (texData[texIdx + 1] * alpha + pixels[bufferIdx + 1] * invAlpha) * this.#lightBuffer[lightIdx + 1];
+                    pixels[bufferIdx + 2] = (texData[texIdx + 2] * alpha + pixels[bufferIdx + 2] * invAlpha) * this.#lightBuffer[lightIdx + 2];
                     pixels[bufferIdx + 3] = 255; // or also blend this if you need transparent canvas
 
                     if(alpha > 254/255){

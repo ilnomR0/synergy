@@ -3,6 +3,7 @@ import {Character} from "./character.js";
 import {Plane} from "./objects/plane.js";
 import { Collision } from "./collision.js";
 import { ParticleGenerator } from "./objects/particleGenerator.js";
+import { PointLight } from "./objects/pointLight.js";
 let syn = new syngyne();
 
 let player = new Character();
@@ -92,7 +93,25 @@ const superCoolParticleGenerator = new ParticleGenerator({
     maxLifetime:900,
     particleRate:100,
     position:{x:0, y:4.5, z:-10}
-})
+});
+
+const light = new PointLight({radius:0.25, velocity:
+    {
+        position:{x:0, y:0, z:0},
+        rotation:{x:0, y:0, z:0}
+    },
+    glowColor:{r:10, g:10, b:10}
+});
+const light2 = new PointLight({radius:0.25, velocity:
+    {
+        position:{x:0, y:0, z:0},
+        rotation:{x:0, y:0, z:0}
+    },
+    glowColor:{r:255, g:0, b:0}
+});
+syn.addLight(light);
+syn.addLight(light2);
+
 // Keep track of the last frame's time globally in your main file
 let lastTime = 0;
 let pause = false;
@@ -112,7 +131,7 @@ syn.loop = async (currentTime) => {
 
         wall6.updateRotation({x:currentTime*0.02, y:90, z:180});
         wall6.render(syn);
-
+        light.updatePosition({x:Math.sin(currentTime/10000)*45, y:0, z:0});
         superCoolParticleGenerator.render(syn);
 
         player.controlCharacter(dt);
@@ -120,6 +139,8 @@ syn.loop = async (currentTime) => {
     }else{
 
     }
+
+
     syn.present();
 
     requestAnimationFrame(syn.loop);

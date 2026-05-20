@@ -31,7 +31,6 @@ export class ParticleGenerator{
                 }));
             }
         }
-        console.log(this.#particles) 
         for(const particle of this.#particles){
             if(particle.getLife() > 0){
                 particle.tickLife();
