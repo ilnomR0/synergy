@@ -1,5 +1,7 @@
 import { Object } from "./object.js";
 
+//i gotta have a Z buffer for these lights...
+//I don't wanna z buffer for these lights tho.....
 export class PointLight extends Object{
     /** @type {Color} */
     #glowColor;

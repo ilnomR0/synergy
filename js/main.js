@@ -95,19 +95,19 @@ const superCoolParticleGenerator = new ParticleGenerator({
     position:{x:0, y:4.5, z:-10}
 });
 
-const light = new PointLight({radius:0.25, velocity:
+const light = new PointLight({radius:0.3, velocity:
     {
-        position:{x:0, y:0, z:0},
+        position:{x:0, y:-5, z:0},
         rotation:{x:0, y:0, z:0}
     },
-    glowColor:{r:10, g:10, b:10}
+    glowColor:{r:100, g:80, b:60}
 });
 const light2 = new PointLight({radius:0.25, velocity:
     {
         position:{x:0, y:0, z:0},
         rotation:{x:0, y:0, z:0}
     },
-    glowColor:{r:255, g:0, b:0}
+    glowColor:{r:255, g:255, b:255}
 });
 syn.addLight(light);
 syn.addLight(light2);
@@ -131,7 +131,7 @@ syn.loop = async (currentTime) => {
 
         wall6.updateRotation({x:currentTime*0.02, y:90, z:180});
         wall6.render(syn);
-        light.updatePosition({x:Math.sin(currentTime/10000)*45, y:0, z:0});
+        light.updatePosition(player.getPosition());
         superCoolParticleGenerator.render(syn);
 
         player.controlCharacter(dt);
