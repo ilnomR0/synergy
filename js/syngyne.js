@@ -31,7 +31,7 @@ export class syngyne {
         this.pointerLockBroken = false;
         this.tick = 0;
         this.res = 320; // Horizontal resolution (chunky pixels)
-        this.clearColor = 0xff000000
+        this.clearColor = 0x70000000;
 
         this.#canvas = document.createElement("canvas");
         this.#canvas.style.position = "absolute";
@@ -60,6 +60,39 @@ export class syngyne {
     }
 
 
+    /**
+     * Calculates the 2D screen pixel boundaries for a 3D light sphere.
+     * @param {Object} camSpacePos The {x, y, z} position of the light in camera space
+     * @param {number} radius The max radius of the light
+     */
+    #getLightScreenBounds(camSpacePos, radius) {
+        const nearZ = 0.01;
+
+        if (camSpacePos.z - radius <= nearZ) {
+            return {
+                minX: 0,
+                maxX: this.#resWidth,
+                minY: 0,
+                maxY: this.#resHeight
+            };
+        }
+
+        const factor = this.#camera.getFactor();
+        const halfW = this.#resWidth >> 1;
+        const halfH = this.#resHeight >> 1;
+
+        const screenX = (camSpacePos.x / camSpacePos.z) * factor + halfW;
+        const screenY = (camSpacePos.y / camSpacePos.z) * factor + halfH;
+
+        const screenRadius = (radius / Math.max(nearZ, camSpacePos.z - radius)) * factor;
+
+        return {
+            minX: Math.max(0, Math.floor(screenX - screenRadius)),
+            maxX: Math.min(this.#resWidth, Math.ceil(screenX + screenRadius)),
+            minY: Math.max(0, Math.floor(screenY - screenRadius)),
+            maxY: Math.min(this.#resHeight, Math.ceil(screenY + screenRadius))
+        };
+    }
     #clipNearPlane(camPts) {
         const nearZ = 0.01;
 
@@ -72,7 +105,8 @@ export class syngyne {
                 uv: {
                     x: p1.uv.x + t * (p2.uv.x - p1.uv.x),
                     y: p1.uv.y + t * (p2.uv.y - p1.uv.y)
-                }
+                },
+                color:p1.color
             };
         };
 
@@ -120,17 +154,19 @@ export class syngyne {
 
         this.#backBuffer = this.#offscreenCtx.createImageData(this.#resWidth, this.#resHeight);
         this.#zBuffer = new Float32Array(this.#resWidth * this.#resHeight).fill(Infinity);
-        this.#lightBuffer = new Float32Array((this.#resWidth * this.#resHeight)*4).fill(Infinity);
+        this.#lightBuffer = new Float32Array((this.#resWidth * this.#resHeight)*3).fill(0);
         this.#pixels = this.#backBuffer.data; 
         this.#zPixels = this.#zBuffer;
         this.#lightPixels = this.#lightBuffer;
         this.#ctx.imageSmoothingEnabled = false; 
+        
+
     }
 
     clear() {
         new Uint32Array(this.#pixels.buffer).fill(this.clearColor); 
         new Float32Array(this.#zPixels.buffer).fill(Infinity);
-        new Float32Array(this.#lightBuffer.buffer).fill(0x000000);
+        this.#lightBuffer.fill(0);
     }
     initApplication(callback = () => {}) {
         callback();
@@ -151,49 +187,57 @@ export class syngyne {
         let camPts = [];
         for (let i = 0; i < 3; i++) {
             const cp = this.#camera.transformPoints(array[i]);
-            cp.uv = array[i].uv; 
+            cp.uv = array[i].uv;
+            cp.color = array[i].color;
             camPts.push(cp);
         }
 
         const validTriangles = this.#clipNearPlane(camPts);
-
         for (const tri of validTriangles) {
-            this.#rasterizeTriangle(tri, texture);
+            this.#rasterizeTriangle(tri, texture, array[0].color);
         }
     }
-
     /**
-     *@param {number} zPixel the Z buffer amount in relation to a pixel
-     *@param {number} xPixel the X position on the screen
-     *@param {number} yPixel the Y position on the screen
+     * Renders a single light as a 2D splat over the pre-rendered geometry.
+     * @param {Light} light The light object to process
      */
-    #LTBL(zCorrect, xPixel, yPixel){
+    renderLightSplat(light) {
+        const camSpacePos = this.#camera.transformPoints(light.getPosition());
+        const radius = light.getRadius();
+
         const factor = this.#camera.getFactor();
         const halfW = this.#resWidth >> 1;
         const halfH = this.#resHeight >> 1;
 
-        // unproject pixel back to camera space
-        const pixelCamX = (xPixel - halfW) / this.res * zCorrect / factor;
-        const pixelCamY = (yPixel - halfH) / this.res * zCorrect / factor;
-        const pixelCamZ = zCorrect;
-        for(const light of this.#lights){
-            const camSpacePos = this.#camera.transformPoints(light.getPosition());
+        for (let yPixel = 0; yPixel < this.#resHeight; yPixel++) {
+            for (let xPixel = 0; xPixel < this.#resWidth; xPixel++) {
+                
+                const idx = yPixel * this.#resWidth + xPixel;
 
-            const dx = pixelCamX - camSpacePos.x;
-            const dy = pixelCamY - camSpacePos.y;
-            const dz = pixelCamZ - camSpacePos.z;
+                const zCorrect = this.#zBuffer[idx];
+                
+                if (zCorrect === undefined || zCorrect === Infinity) continue; 
 
-            const distSq = dx*dx + dy*dy + dz*dz;
-            const intensity = light.getRadius() / distSq; 
+                const pixelCamX = (xPixel - halfW) / this.res * zCorrect / factor;
+                const pixelCamY = (yPixel - halfH) / this.res * zCorrect / factor;
+                const pixelCamZ = zCorrect;
 
-            const idx = yPixel * this.#resWidth + xPixel;
-            this.#lightBuffer[idx*3]     += intensity * light.getColor().r;
-            this.#lightBuffer[idx*3 + 1] += intensity * light.getColor().g;
-            this.#lightBuffer[idx*3 + 2] += intensity * light.getColor().b;
+                const dx = pixelCamX - camSpacePos.x;
+                const dy = pixelCamY - camSpacePos.y;
+                const dz = pixelCamZ - camSpacePos.z;
+
+                const distSq = dx*dx + dy*dy + dz*dz;
+
+                    const intensity = radius / distSq/2; 
+                    
+                    this.#lightBuffer[idx*3]     += intensity * light.getColor().r/255;
+                    this.#lightBuffer[idx*3 + 1] += intensity * light.getColor().g/255;
+                    this.#lightBuffer[idx*3 + 2] += intensity * light.getColor().b/255;
+            }
         }
+        console.log(this.#lightBuffer);
     }
-
-    #rasterizeTriangle(camPts, texture) {
+    #rasterizeTriangle(camPts, texture, color={r:0,g:0,b:0}) {
         const pts = [];
         const zVals = [];
 
@@ -254,27 +298,41 @@ export class syngyne {
                 const texX = ~~(u * texW);
                 const texY = ~~(v * texH);
                 const texIdx = (texY * texW + texX) * 4;
-                this.#LTBL(zCorrect, x, y)
                 const bufferIdx = (y * resWidth + x) * 4;
                 if(zPixels[bufferIdx/4] > zCorrect && texData[texIdx + 3] > 0){
                     const alpha = texData[texIdx + 3] / 255;
                     const invAlpha = 1.0 - alpha;
-                   
-                    const lightIdx = (y * resWidth + x) * 3;
-                    
-                    pixels[bufferIdx]     = (texData[texIdx]     * alpha + pixels[bufferIdx]     * invAlpha) * this.#lightBuffer[lightIdx];
-                    pixels[bufferIdx + 1] = (texData[texIdx + 1] * alpha + pixels[bufferIdx + 1] * invAlpha) * this.#lightBuffer[lightIdx + 1];
-                    pixels[bufferIdx + 2] = (texData[texIdx + 2] * alpha + pixels[bufferIdx + 2] * invAlpha) * this.#lightBuffer[lightIdx + 2];
-                    pixels[bufferIdx + 3] = 255; // or also blend this if you need transparent canvas
-
+// Inside #rasterizeTriangle, just write the raw colors:
+pixels[bufferIdx]     = ((255-color.b)/255) * texData[texIdx]     * alpha + pixels[bufferIdx]     * invAlpha
+pixels[bufferIdx + 1] = ((255-color.r)/255) * texData[texIdx + 1] * alpha + pixels[bufferIdx + 1] * invAlpha
+pixels[bufferIdx + 2] = ((255-color.g)/255) * texData[texIdx + 2] * alpha + pixels[bufferIdx + 2] * invAlpha
+//pixels[bufferIdx]     = zCorrect;
+//pixels[bufferIdx + 1] = zCorrect;
+//pixels[bufferIdx + 2] = zCorrect;
                     if(alpha > 254/255){
+ 
                         zPixels[bufferIdx/4] = zCorrect;
                     }
+
+                    pixels[bufferIdx + 3] = 255;
                 }
             }
         }
     }
+    compositeLights() {
+        const pixels = this.#pixels;
+        const lights = this.#lightBuffer;
+        const totalPixels = this.#resWidth * this.#resHeight;
 
+    for (let i = 0; i < totalPixels; i++) {
+        const pxIdx = i * 4;
+        const ltIdx = i * 3;
+
+        pixels[pxIdx]     *= lights[ltIdx];     // Red
+        pixels[pxIdx + 1] *= lights[ltIdx + 1]; // Green
+        pixels[pxIdx + 2] *= lights[ltIdx + 2]; // Blue
+    }
+}
     static async loadTexture(url) {
         return new Promise((resolve, reject) => {
             const img = new Image();

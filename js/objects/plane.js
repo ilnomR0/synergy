@@ -7,11 +7,12 @@ export class Plane extends Object{
 
     #vertexPositions;
     #triangles;
-    
-    constructor({velocity = {position:{x:0, y:0, z:0}, rotation:{x:0, y:0, z:0}}, position={x:0,y:0,z:0}, scale = {x:1, y:1, z:1}, texture, UV={x:1,y:1}, rotation={x:0,y:0,z:0}, rotFormat="xyz"}){
+    #tint; 
+    constructor({velocity = {position:{x:0, y:0, z:0}, rotation:{x:0, y:0, z:0}},tint={r:0, g:0, b:0}, position={x:0,y:0,z:0}, scale = {x:1, y:1, z:1}, texture, UV={x:1,y:1}, rotation={x:0,y:0,z:0}, rotFormat="xyz"}){
         super({position, scale, rotation, velocity, rotFormat})
         this.#texture = texture;
         this.#UV = UV;
+        this.#tint = tint;
         this.#updateVertexPositions();
         this.lockedAxis={
             x:false,
@@ -45,13 +46,13 @@ export class Plane extends Object{
             [
                 //1, 2, 3
                 //2, 1, 4
-                {x:this.#vertexPositions[0].x, y:this.#vertexPositions[0].y, z:this.#vertexPositions[0].z, color:{r:0, g:0, b:255}, uv:{x:0, y:this.#UV.y}},
-                {x:this.#vertexPositions[1].x, y:this.#vertexPositions[1].y, z:this.#vertexPositions[1].z, color:{r:0, g:255, b:0}, uv:{x:this.#UV.x, y:0}},
-                {x:this.#vertexPositions[2].x, y:this.#vertexPositions[2].y, z:this.#vertexPositions[2].z, color:{r:255, g:0, b:0}, uv:{x:this.#UV.x, y:this.#UV.y}},
+                {x:this.#vertexPositions[0].x, y:this.#vertexPositions[0].y, z:this.#vertexPositions[0].z, color:this.#tint, uv:{x:0, y:this.#UV.y}},
+                {x:this.#vertexPositions[1].x, y:this.#vertexPositions[1].y, z:this.#vertexPositions[1].z, color:this.#tint, uv:{x:this.#UV.x, y:0}},
+                {x:this.#vertexPositions[2].x, y:this.#vertexPositions[2].y, z:this.#vertexPositions[2].z, color:this.#tint, uv:{x:this.#UV.x, y:this.#UV.y}},
             ],[
-                {x:this.#vertexPositions[1].x, y:this.#vertexPositions[1].y, z:this.#vertexPositions[1].z, color:{r:0, g:150, b:0}, uv:{x:this.#UV.x, y:0}},
-                {x:this.#vertexPositions[0].x, y:this.#vertexPositions[0].y, z:this.#vertexPositions[0].z, color:{r:0, g:0, b:150}, uv:{x:0, y:this.#UV.y}},
-                {x:this.#vertexPositions[3].x, y:this.#vertexPositions[3].y, z:this.#vertexPositions[3].z, color:{r:150, g:150, b:150}, uv:{x:0, y:0}},
+                {x:this.#vertexPositions[1].x, y:this.#vertexPositions[1].y, z:this.#vertexPositions[1].z, color:this.#tint, uv:{x:this.#UV.x, y:0}},
+                {x:this.#vertexPositions[0].x, y:this.#vertexPositions[0].y, z:this.#vertexPositions[0].z, color:this.#tint, uv:{x:0, y:this.#UV.y}},
+                {x:this.#vertexPositions[3].x, y:this.#vertexPositions[3].y, z:this.#vertexPositions[3].z, color:this.#tint, uv:{x:0, y:0}},
             ]
         ]
     }
@@ -87,10 +88,12 @@ export class Plane extends Object{
         super.applyVelocity();
         this.#updateVertexPositions();
     }
+    setTriangles(){
+
+    }
     getTriangles(){return this.#triangles};
     getVertexPositions(){return this.#vertexPositions};
     getTexture(){return this.#texture};
-
 }
 
 

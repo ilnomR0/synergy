@@ -11,7 +11,8 @@ export class ParticleGenerator{
     #textures = [];
     #facingObject;
     #particleRate = 1;
-    constructor({particleRate = 1,position = {x:0, y:0, z:0}, particleCount = 10,maxLifetime =10, minLifetime = 0, textures, facingObject}){
+    #tint= {r:0, g:0, b:0};
+    constructor({tint={r:0, g:0, b:0}, particleRate = 2,position = {x:0, y:0, z:0}, particleCount = 10,maxLifetime =10, minLifetime = 0, textures, facingObject}){
         this.#particleCount = particleCount;
         this.#position = position;
         this.#maxLifetime = maxLifetime;
@@ -19,6 +20,7 @@ export class ParticleGenerator{
         this.#textures = textures;
         this.#facingObject = facingObject;
         this.#particleRate = particleRate;
+        this.#tint= tint;
     }
     render(syn){
         for(let i = 0; i < this.#particleRate; i++){
@@ -27,7 +29,17 @@ export class ParticleGenerator{
                     position:math3.addVec3(this.#position, {x: (Math.random() * 2)+1, z:(Math.random() * 10)+5, y:0}),
                     lifetime:~~(Math.random()*(this.#maxLifetime-this.#minLifetime)+this.#minLifetime),
                     texture:this.#textures[~~(Math.random()*this.#textures.length-1)],
-                    facingObject:this.#facingObject
+                    facingObject:this.#facingObject,
+                    tint:this.#tint,
+                    velocity:{position:{
+                    x:((Math.random()*10)-5)/150,
+                    y:-0.05,
+                    z:((Math.random()*10)-5)/150,
+                    },rotation:{
+                        x:0,
+                        y:0,
+                        z:0
+                    }}
                 }));
             }
         }
