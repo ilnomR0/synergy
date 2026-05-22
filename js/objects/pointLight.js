@@ -11,7 +11,6 @@ export class PointLight extends Object{
         super({velocity, position, scale, rotation, rotFormat});
         this.#glowColor = glowColor;
         this.#radius = radius;
-    
         this.zBuffer;
         
     }

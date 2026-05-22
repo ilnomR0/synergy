@@ -1,13 +1,14 @@
+
 export class Collision{
     static #colliderSpots = [];
     static gravity = {
-        x:0,
+        x:2,
         y:30,
         z:0 
     }
     
-    static addCollider(mesh){
-        this.#colliderSpots.push(mesh); 
+    static addCollider(object){
+        this.#colliderSpots.push(object); 
     }
 
     static rigidify(object, dt){
@@ -18,7 +19,7 @@ export class Collision{
         object.position.x += object.velocity.x*dt;
         object.position.z += object.velocity.z*dt;
 
-        if(object.position.y >= 1.5){ //TEMPORARY COLLISION THINGS
+        if(-5 >= object.position.y || object.position.y >= 1.5){ //TEMPORARY COLLISION THINGS
             object.position.y -=object.velocity.y*dt;
             object.velocity.y -= this.gravity.y*dt;
             object.velocity.y = 0;

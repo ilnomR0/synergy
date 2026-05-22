@@ -1,8 +1,12 @@
 import {Camera} from "./camera.js";
 import * as Math3 from "./3dMath.js";
+import { syngyne } from "./syngyne.js";
 export class Character{
     #camera = new Camera();
-    constructor(){
+    /** @type{syngyne} */
+    #syn;
+    constructor(syn){
+        this.#syn = syn;
         this.activeKeys = {};
         this.#defKeys();
         this.position = {
@@ -28,7 +32,7 @@ export class Character{
         };
         this.sensitivity = 40;
         this.mouseSensitivity = this.sensitivity/40 * (navigator.userAgent.includes("Chrome") && navigator.userAgentData.platform == "Linux") ? .3 : 1;
-        this.straif = 40;
+        this.straif = 10;
         this.jumpForce = 15;
         this.timesJumped = 0;
         this.maxCameraX = [-90, 90];
@@ -42,11 +46,13 @@ export class Character{
             this.activeKeys[e.key] = false;
         });
         document.addEventListener("mousemove", (e)=>{
-            this.#camera.rotation.x -= e.movementY * this.mouseSensitivity;
-            this.rotation.y += e.movementX * this.mouseSensitivity;
-            this.#camera.rotation.x = Math.max(this.#camera.rotation.x, this.maxCameraX[0]);
-            this.#camera.rotation.x = Math.min(this.#camera.rotation.x, this.maxCameraX[1]);
-            this.#camera.rotation.z+=e.movementX/50;
+            if(document.pointerLockElement === this.#syn.getCanvas()){
+                this.#camera.rotation.x -= e.movementY * this.mouseSensitivity;
+                this.rotation.y += e.movementX * this.mouseSensitivity;
+                this.#camera.rotation.x = Math.max(this.#camera.rotation.x, this.maxCameraX[0]);
+                this.#camera.rotation.x = Math.min(this.#camera.rotation.x, this.maxCameraX[1]);
+                this.#camera.rotation.z+=e.movementX/50;
+            }
         });
     }
     controlCharacter(dt, syn) {
@@ -107,11 +113,6 @@ export class Character{
             this.pausable = false;
         }else if(!this.activeKeys["Escape"] && !this.pausable){
             this.pausable = true;
-        }
-
-        if(!this.onGround){
-            this.velocity.x = Math.sin(this.#camera.rotation.y * Math.PI/180) * avg 
-            this.velocity.z = Math.cos(this.#camera.rotation.y * Math.PI/180) * avg
         }
 
         this.#camera.position = this.position;

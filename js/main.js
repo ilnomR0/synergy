@@ -7,7 +7,7 @@ import { PointLight } from "./objects/pointLight.js";
 import * as Math3 from "./3dMath.js";
 let syn = new syngyne();
 
-let player = new Character();
+let player = new Character(syn);
 syn.setCamera(player.getCamera());
 
 const stoneTex = await syngyne.loadTexture("./images/stone.png");
@@ -94,7 +94,6 @@ const superCoolParticleGenerator = new ParticleGenerator({
     maxLifetime:200,
     particleRate:1000,
     position:{x:0, y:4.5, z:-10},
-    tint:{r:100, g:0, b:0}
 });
 
 const light = new PointLight({radius:500, velocity:
@@ -106,7 +105,7 @@ const light = new PointLight({radius:500, velocity:
 });
 const light2 = new PointLight({radius:100, velocity:
     {
-        position:{x:-1, y:0, z:0},
+        position:{x:100, y:100, z:0},
         rotation:{x:0, y:0, z:0}
     },
     glowColor:{r:255, g:100, b:0}
@@ -139,20 +138,20 @@ syn.loop = async (currentTime) => {
                 "yxz")
         ));
         light.setRadius((Math.random()*(50-40))+50);
+        superCoolParticleGenerator.render(syn);
+        
         light.render(syn);
         light2.render(syn);
-
         syn.compositeLights();
-        superCoolParticleGenerator.render(syn);
 
         Collision.rigidify(player, dt);
+    syn.present();
     }else{
 
     }
 
         player.controlCharacter(dt, syn);
 
-    syn.present();
 
     requestAnimationFrame(syn.loop);
 };
