@@ -26,6 +26,7 @@ export class syngyne {
     #resHeight;
     #pointerLockBroken;
     #lights = [];
+    #paused = false;
 
     constructor() {
         this.pointerLockBroken = false;
@@ -54,6 +55,7 @@ export class syngyne {
                 this.#canvas.requestPointerLock();
             });
             await this.#canvas.requestFullscreen(); 
+            await navigator.keyboard.lock();
         });
         this.#resizeCanvas();
 
@@ -354,5 +356,7 @@ pixels[bufferIdx + 2] = ((255-color.g)/255) * texData[texIdx + 2] * alpha + pixe
     getCtx() { return this.#ctx; }
     getCanvas() { return this.#canvas; }
     getBroken() {return this.#pointerLockBroken; }
+    isPaused() {return this.#paused; }
+    togglePause() { this.#paused = !this.#paused };
     addLight(light){this.#lights.push(light)};
 }

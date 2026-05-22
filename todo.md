@@ -28,7 +28,7 @@ This is where all of the tasks for Synergy are located. Once one is done, just c
  - [ ] wall hopping 
 
 ## environment
- - [ ] lighting
+ - [x] lighting
 
 ## general level building objects
  - [ ] pushable objects

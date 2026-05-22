@@ -18,6 +18,8 @@ export class PointLight extends Object{
     render(syn){
         syn.renderLightSplat(this);
     }
+    setRadius(intensity){this.#radius=intensity}
     getRadius(){return this.#radius}
     getColor(){return this.#glowColor}
+
 }

@@ -4,6 +4,7 @@ import {Plane} from "./objects/plane.js";
 import { Collision } from "./collision.js";
 import { ParticleGenerator } from "./objects/particleGenerator.js";
 import { PointLight } from "./objects/pointLight.js";
+import * as Math3 from "./3dMath.js";
 let syn = new syngyne();
 
 let player = new Character();
@@ -91,12 +92,12 @@ const superCoolParticleGenerator = new ParticleGenerator({
     textures:[fireTex],
     particleCount:1000,
     maxLifetime:200,
-    particleRate:1,
+    particleRate:1000,
     position:{x:0, y:4.5, z:-10},
     tint:{r:100, g:0, b:0}
 });
 
-const light = new PointLight({radius:100, velocity:
+const light = new PointLight({radius:500, velocity:
     {
         position:{x:0, y:-5, z:0},
         rotation:{x:0, y:0, z:0}
@@ -108,18 +109,17 @@ const light2 = new PointLight({radius:100, velocity:
         position:{x:-1, y:0, z:0},
         rotation:{x:0, y:0, z:0}
     },
-    glowColor:{r:255, g:0, b:0}
+    glowColor:{r:255, g:100, b:0}
 });
 syn.addLight(light);
 syn.addLight(light2);
 
 // Keep track of the last frame's time globally in your main file
 let lastTime = 0;
-let pause = false;
 syn.loop = async (currentTime) => {
-    if(!pause){
         const dt = (currentTime - lastTime) / 1000 || 0; 
         lastTime = currentTime;
+    if(!syn.isPaused()){
 
         syn.clear();
         wall1.render(syn);
@@ -132,19 +132,25 @@ syn.loop = async (currentTime) => {
 
         wall6.updateRotation({x:currentTime*0.02, y:90, z:180});
         wall6.render(syn);
-        light.updatePosition({x:Math.sin(currentTime/10000)*50, y:0, z:0});
+        light.updatePosition(Math3.addVec3(
+            player.getPosition(),
+            Math3.gimbal({x:0, y:1,z:1},
+                Math3.subVec3(Math3.Vec3Z,player.getCamera().getRotation()),
+                "yxz")
+        ));
+        light.setRadius((Math.random()*(50-40))+50);
         light.render(syn);
         light2.render(syn);
-        
+
         syn.compositeLights();
         superCoolParticleGenerator.render(syn);
-        
-        player.controlCharacter(dt);
+
         Collision.rigidify(player, dt);
     }else{
 
     }
 
+        player.controlCharacter(dt, syn);
 
     syn.present();
 

@@ -21,7 +21,6 @@ export class Plane extends Object{
         }
     
     }
-
     render(drw){
         drw.triangleTex(this.#triangles[0], this.#texture);
         drw.triangleTex(this.#triangles[1], this.#texture);

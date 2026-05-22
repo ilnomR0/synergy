@@ -1,5 +1,5 @@
 import {Camera} from "./camera.js";
-
+import * as Math3 from "./3dMath.js";
 export class Character{
     #camera = new Camera();
     constructor(){
@@ -21,12 +21,18 @@ export class Character{
             y:0,
             z:0
         }
+        this.oldVelocity = {
+            x:0,
+            y:0,
+            z:0
+        };
         this.sensitivity = 40;
         this.mouseSensitivity = this.sensitivity/40 * (navigator.userAgent.includes("Chrome") && navigator.userAgentData.platform == "Linux") ? .3 : 1;
-        this.straif = 20;
+        this.straif = 40;
         this.jumpForce = 15;
         this.timesJumped = 0;
         this.maxCameraX = [-90, 90];
+        this.pausable = true;
     }
     #defKeys(){
         document.addEventListener("keydown",(e)=>{
@@ -43,7 +49,7 @@ export class Character{
             this.#camera.rotation.z+=e.movementX/50;
         });
     }
-    controlCharacter(dt) {
+    controlCharacter(dt, syn) {
         const currentSpeed = this.speed;
         const currentSensitivity = this.sensitivity*5 * dt;
 
@@ -57,8 +63,11 @@ export class Character{
             this.velocity.x += Math.sin((this.rotation.y + 90) * Math.PI / 180) * (currentSpeed*dt)/(this.onGround ? 1 : this.straif);
             this.#camera.rotation.z-=50*dt;
         }
-        if (this.activeKeys[" "] && this.onGround && this.timesJumped<=1000) {
+        if (this.activeKeys[" "] && this.onGround && this.timesJumped<=0) {
             this.velocity.y = -this.jumpForce;
+            this.oldVelocity.x = this.velocity.x;
+            this.oldVelocity.y = this.velocity.y;
+            this.oldVelocity.z = this.velocity.z;
             this.timesJumped++;
         }else if(!this.activeKeys[" "] && this.timesJumped > 0 && this.onGround){
             this.timesJumped--
@@ -93,7 +102,17 @@ export class Character{
         if(this.activeKeys['k']){
             this.sensitivity-=0.1;
         }
+        if(this.activeKeys["Escape"] && this.pausable){
+            syn.togglePause();
+            this.pausable = false;
+        }else if(!this.activeKeys["Escape"] && !this.pausable){
+            this.pausable = true;
+        }
 
+        if(!this.onGround){
+            this.velocity.x = Math.sin(this.#camera.rotation.y * Math.PI/180) * avg 
+            this.velocity.z = Math.cos(this.#camera.rotation.y * Math.PI/180) * avg
+        }
 
         this.#camera.position = this.position;
         this.#camera.rotation.y = this.rotation.y;
