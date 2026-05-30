@@ -1,5 +1,12 @@
 {
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "lint": "eslint ts/"
+  },
   "devDependencies": {
-    "eslint": "^10.4.0"
+    "@eslint/js": "^10.0.1",
+    "globals": "^17.6.0",
+    "typescript": "^5.9.3"
   }
 }

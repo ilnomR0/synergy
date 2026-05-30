@@ -1,36 +1,84 @@
-
-export class Collision{
-    static #colliderSpots = [];
-    static gravity = {
-        x:2,
-        y:30,
-        z:0 
+import * as Math3 from "./3dMath.js";
+export class Collision {
+    /**
+     * Marks the given object(s) as a collidable object
+     */
+    static addCollider(...objects) {
+        for (const object of objects) {
+            this.colliderSpots.push(object);
+        }
     }
-    
-    static addCollider(object){
-        this.#colliderSpots.push(object); 
+    static AABB(colliderObj, object) {
+        const scaleOff = Math3.absVec3(Math3.gimbal({
+            x: colliderObj.scale.x * 0.5,
+            y: colliderObj.scale.y * 0.5,
+            z: colliderObj.scale.z * 0.5
+        }, colliderObj.rotation, colliderObj.rotFormat));
+        const objOff = {
+            x: object.scale.x * 0.5,
+            y: object.scale.y * 0.5,
+            z: object.scale.z * 0.5
+        };
+        //big ol' check to determine if the object is inside of the other object. 
+        //we also need to determine it all based off of the rotation of the object
+        return (colliderObj.position.x - scaleOff.x <= object.position.x + objOff.x &&
+            colliderObj.position.x + scaleOff.x >= object.position.x - objOff.x &&
+            colliderObj.position.y - scaleOff.y <= object.position.y + objOff.y &&
+            colliderObj.position.y + scaleOff.y >= object.position.y - objOff.y &&
+            colliderObj.position.z - scaleOff.z <= object.position.z + objOff.z &&
+            colliderObj.position.z + scaleOff.z >= object.position.z - objOff.z);
     }
-
-    static rigidify(object, dt){
-        object.velocity.y += this.gravity.y*dt;
-        object.velocity.x += this.gravity.x*dt;
-        object.velocity.z += this.gravity.z*dt;
-        object.position.y += object.velocity.y*dt;
-        object.position.x += object.velocity.x*dt;
-        object.position.z += object.velocity.z*dt;
-
-        if(-5 >= object.position.y || object.position.y >= 1.5){ //TEMPORARY COLLISION THINGS
-            object.position.y -=object.velocity.y*dt;
-            object.velocity.y -= this.gravity.y*dt;
-            object.velocity.y = 0;
-            object.onGround = true;
-
-            object.velocity.x *=Math.pow(0.0002, dt);
-            object.velocity.z *=Math.pow(0.0002, dt);
-        }else{
-            object.onGround = false;
-            object.velocity.x *=Math.pow(0.7, dt);
-            object.velocity.z *=Math.pow(0.7, dt);
+    /**
+     * when called on the given object, it applies gravity to said object, and collides with anything that is marked as a collider
+     */
+    static rigidify(object, dt) {
+        //applying gravity
+        object.velocity.position.y += this.gravity.y * dt;
+        object.velocity.position.x += this.gravity.x * dt;
+        object.velocity.position.z += this.gravity.z * dt;
+        //applying velocity
+        object.colliding = false;
+        object.onGround = false;
+        //main colision detection logic
+        object.position.x += object.velocity.position.x * dt;
+        this.colliderSpots.forEach((colliderObj) => {
+            if (this.AABB(colliderObj, object)) {
+                object.position.x -= object.velocity.position.x * dt;
+                object.velocity.position.x = 0;
+                object.colliding = true;
+            }
+        });
+        object.position.y += object.velocity.position.y * dt;
+        this.colliderSpots.forEach((colliderObj) => {
+            if (this.AABB(colliderObj, object)) {
+                object.position.y -= object.velocity.position.y * dt;
+                object.velocity.position.y = 0;
+                object.colliding = true;
+                object.onGround = true;
+            }
+        });
+        object.position.z += object.velocity.position.z * dt;
+        this.colliderSpots.forEach((colliderObj) => {
+            if (this.AABB(colliderObj, object)) {
+                object.position.z -= object.velocity.position.z * dt;
+                object.velocity.position.z = 0;
+                object.colliding = true;
+            }
+        });
+        if (object.colliding) {
+            object.velocity.position.x *= Math.pow(0.0002, dt);
+            object.velocity.position.z *= Math.pow(0.0002, dt);
+        }
+        else {
+            object.velocity.position.x *= Math.pow(0.7, dt);
+            object.velocity.position.z *= Math.pow(0.7, dt);
         }
     }
 }
+Collision.colliderSpots = [];
+Collision.gravity = {
+    x: 0,
+    y: 30,
+    z: 0
+};
+//# sourceMappingURL=collision.js.map
