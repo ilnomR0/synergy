@@ -24,11 +24,13 @@ This is where all of the tasks for Synergy are located. Once one is done, just c
  - [ ] eating
  - [ ] sliding
  - [ ] climbing
- - [ ] shooting
+ - [ ] shooting?
  - [ ] wall hopping 
+ - [ ] monkeybars?
 
 ## environment
  - [x] lighting
+ - [x] physics
 
 ## general level building objects
  - [ ] pushable objects
