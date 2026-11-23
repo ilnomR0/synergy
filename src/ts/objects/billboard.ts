@@ -1,8 +1,9 @@
-import type { Vec2, Vec3, Color, RotFormat, Velocity } from "../types.ts";
-import { Plane } from "./plane.ts";
-import type { Object } from "./object.ts";
+import type { Vec2, Vec3, Color, RotFormat, Velocity } from "@/types.ts";
+import { Plane } from "@objects/plane.ts";
+import type { Object } from "@objects/object.ts";
 export class Billboard extends Plane {
-    private facingObject: Object;
+    readonly facingObject: Object;
+    static readonly isBillboard = true;
 
     constructor({ tint = { r: 0, g: 0, b: 0 }, velocity = { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0 } }, position = { x: 0, y: 0, z: 0 }, scale = { x: 1, y: 1, z: 1 }, texture, UV = { x: 1, y: 1 }, rotation = { x: 0, y: 0, z: 0 }, rotFormat = "xyz" as RotFormat, facingObject }: {
         tint?: Color;
@@ -19,9 +20,9 @@ export class Billboard extends Plane {
         this.facingObject = facingObject;
     }
 
-    render(syn: { triangleTex: (tri: any, texture: ImageData) => void }): void {
-        const ourPos = this.getPosition();
-        const theirPos = this.facingObject.getPosition();
+    render(): void {
+        const ourPos = this.position;
+        const theirPos = this.facingObject.position;
         const distX = ourPos.x - theirPos.x;
         const distY = ourPos.y - theirPos.y;
         const distZ = ourPos.z - theirPos.z;
@@ -32,8 +33,6 @@ export class Billboard extends Plane {
             y: (Math.atan2(distZ, distX) * (180 / Math.PI)) + 90
         });
 
-        super.render(syn);
+        super.render();
     }
-
-    getFacingObject(): Object{ return this.facingObject; }
 }

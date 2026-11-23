@@ -1,0 +1,24 @@
+{
+    levelName: "Intro",
+    levelObjects:[
+        {
+            name:"Character",
+            properties:{},
+            children:[
+                {
+                    name:"Light",
+                    properties:{
+                        radius: 500,
+                        velocity:{
+                            position: { x: 0, y: -5, z: 0 },
+                            rotation: { x: 0, y: 0, z: 0 }
+                        },
+                        glowColor: { r: 100, g: 60, b: 2 }
+
+                    },
+                    children:[]
+                }
+            ]
+        }
+    ]
+}

@@ -1,12 +1,10 @@
-import type { Vec3, RotFormat, Velocity } from "./types.ts";
-import { Camera } from "./camera.ts";
-import { Object } from "./objects/object.ts";
-import type { syngyne } from "./syngyne.ts";
-import * as Math3 from "./3dMath.ts";
+import type { Vec3, RotFormat, Velocity } from "@/types.ts";
+import { Camera } from "@objects/camera.ts";
+import { Object } from "@objects/object.ts";
+import * as Math3 from "@syngyne/3dMath.ts";
 export class Character extends Object {
     
-    private camera: Camera = new Camera();
-    private syn: syngyne;
+    readonly camera: Camera = new Camera();
     
     public activeKeys: Record<string, boolean> = {};
     public speed: number = 90;
@@ -18,9 +16,9 @@ export class Character extends Object {
     public maxCameraX: [number, number] = [-90, 90];
     public pausable: boolean = true;
     public oldVelocity: Vec3 = { x: 0, y: 0, z: 0 };
+    static readonly isCharacter = true;
     
-    constructor({ syn, velocity = { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0 } }, position = { x: 2, y: -3, z: 2 }, scale = { x: 2, y: 3, z: 2 }, rotation = { x: 0, y: 0, z: 0 }, rotFormat = "xyz" as RotFormat }: {
-        syn: syngyne;
+    constructor({ velocity = { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0 } }, position = { x: 2, y: -3, z: 2 }, scale = { x: 2, y: 3, z: 2 }, rotation = { x: 0, y: 0, z: 0 }, rotFormat = "xyz" as RotFormat }: {
         velocity?: Velocity;
         position?: Vec3;
         scale?: Vec3;
@@ -28,12 +26,11 @@ export class Character extends Object {
         rotFormat?: RotFormat;
     }) {
         super({ velocity, rotation, position, scale, rotFormat })
-        this.syn = syn;
         this.mouseSensitivity = this.sensitivity / 40 * (navigator.userAgent.includes("Chrome") ? 0.3 : 1);
-        this.#defKeys();
+        this.defKeys();
     }
 
-    #defKeys(): void {
+    private defKeys(): void {
         document.addEventListener("keydown", (e: KeyboardEvent) => {
             this.activeKeys[e.key] = true;
         });
@@ -41,7 +38,7 @@ export class Character extends Object {
             this.activeKeys[e.key] = false;
         });
         document.addEventListener("mousemove", (e: MouseEvent) => {
-            if (document.pointerLockElement === this.syn.getCanvas()) {
+            if (document.pointerLockElement === syn.getCanvas()) {
                 this.camera.rotation.x -= e.movementY * this.mouseSensitivity;
                 this.rotation.y += e.movementX * this.mouseSensitivity;
                 this.camera.rotation.x = Math.max(this.camera.rotation.x, this.maxCameraX[0]);
@@ -51,7 +48,7 @@ export class Character extends Object {
         });
     }
 
-    controlCharacter(dt: number, syn: syngyne): void {
+    controlCharacter(dt: number): void {
         const currentSpeed = this.speed;
         const currentSensitivity = this.sensitivity * 5 * dt;
 
@@ -116,7 +113,4 @@ export class Character extends Object {
         this.camera.rotation.z *= Math.pow(0.02, dt);
     }
 
-    getCamera(): Camera {
-        return this.camera;
-    }
 }

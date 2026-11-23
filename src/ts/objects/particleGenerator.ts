@@ -1,7 +1,7 @@
-import type { Vec3, Color } from "../types.ts";
-import * as math3 from "../3dMath.ts";
-import { Particle } from "./particle.ts";
-import type { Object } from "./object.ts";
+import type { Vec3, Color } from "@/types.ts";
+import * as math3 from "@syngyne/3dMath.ts";
+import { Particle } from "@objects/particle.ts";
+import type { Object } from "@objects/object.ts";
 
 export class ParticleGenerator {
     private particles: Particle[] = [];
@@ -13,8 +13,18 @@ export class ParticleGenerator {
     private facingObject!: Object;
     private particleRate: number = 1;
     private tint: Color = { r: 0, g: 0, b: 0 };
+    static readonly isParticleGenerator = true;
 
-    constructor({ tint = { r: 0, g: 0, b: 0 }, particleRate = 2, position = { x: 0, y: 0, z: 0 }, particleCount = 10, maxLifetime = 10, minLifetime = 0, textures = [], facingObject }: {
+    constructor({
+        tint = { r: 0, g: 0, b: 0 },
+            particleRate = 2,
+            position = { x: 0, y: 0, z: 0 },
+            particleCount = 10,
+            maxLifetime = 10,
+            minLifetime = 0,
+            textures = [],
+            facingObject 
+    }: {
         tint?: Color;
         particleRate?: number;
         position?: Vec3;
@@ -34,7 +44,7 @@ export class ParticleGenerator {
         this.tint = tint;
     }
 
-    render(syn: { triangleTex: (tri: any, texture: ImageData) => void }): void {
+    render(): void {
         for (let i = 0; i < this.particleRate; i++) {
             if (this.particles.length < this.particleCount) {
                 this.particles.push(new Particle({
@@ -60,9 +70,10 @@ export class ParticleGenerator {
         for (const particle of this.particles) {
             if (particle.getLife() > 0) {
                 particle.tickLife();
-                particle.render(syn);
+                particle.render();
                 continue;
             } else {
+                particle.destructor();
                 this.particles.splice(this.particles.indexOf(particle), 1);
             }
         }

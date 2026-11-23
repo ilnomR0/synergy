@@ -5,19 +5,8 @@ This is where all of the tasks for Synergy are located. Once one is done, just c
 
 
 
-## textures
- - [ ] multiple wall textures
- - [ ] unique ceiling textures
- - [ ] ground textures 
- - [ ] enemy
- - [ ] gun or mystical weapon texture
-
-## models
- - [x] torch model 
- - [ ] enemy models
- - [ ] gun models
-
-## movement
+## Engine
+### movement
  - [x] deltatime everywhere (for movement)
  - [ ] dashing
  - [ ] crawling
@@ -28,27 +17,57 @@ This is where all of the tasks for Synergy are located. Once one is done, just c
  - [ ] wall hopping 
  - [ ] monkeybars?
 
-## environment
- - [x] lighting
- - [x] physics
+### environment
+ - [ ] cutscenes
+ - [ ] viewport switching between cameras
 
-## general level building objects
- - [ ] pushable objects
- - [ ] cube
+### lighting
+ - [ ] colored lighting
+ - [ ] shadows
+ - [ ] baked lighting
+
+### physics
+ - [ ] basic AABB collision
+ - [ ] mesh-based collision options
+
+### general level building objects
+ - [x] pushable objects
+ - [x] cube
  - [ ] sphere
  - [ ] OBJ imports
  - [x] particles
-## sound
+ - [ ] parenting for objects
+
+### audio 
  - [ ] directional audio
+ - [ ] background audio
+
+### editor
+ - [ ] export as json
+
+### level system
+ - [ ] read level as json
+ - [ ] save file/system (cookie probably)
+
+## Game
+
+### textures
+ - [ ] multiple wall textures
+ - [ ] unique ceiling textures
+ - [ ] ground textures 
+ - [ ] enemy
+ - [ ] gun or mystical weapon texture
+
+### models
+ - [x] torch model 
+ - [ ] wizard model
+ - [ ] enemy models
+ - [ ] gun models
+
+### music 
  - [ ] dashing sounds, (a very nice gradual woOOOOOOoSSSHH!!!!)
  - [ ] cool music
 
-## level building
+### level building
  - [ ] Make something akin to the hammer level editor
- - [ ] construct ACT I: intro
- - [ ] general level building objects
-    - [ ] sound
-    - [ ] environment
-    - [ ] movement
- - [ ] figure out what to do from there
-    - [ ] construct ACT I: intro
+ - [ ] level saving and creation tools (possibly JSON based)

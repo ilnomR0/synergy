@@ -1,6 +1,8 @@
-import type { Vec3 } from "./types.ts";
-import type { Object } from "./objects/object.ts";
-import * as Math3 from "./3dMath.ts";
+import type { Vec3, VertexData } from "@/types.ts";
+import { Object } from "@objects/object.ts";
+import { Mesh } from "@objects/mesh.ts";
+import * as Math3 from "@syngyne/3dMath.ts";
+
 export class Collision {
 
     private static colliderSpots: Object[] = [];
@@ -20,7 +22,7 @@ export class Collision {
         }
     }
 
-    private static AABB(colliderObj:Object, object:Object):boolean{
+    private static AABB(colliderObj:Object, object:Object){
         const scaleOff = Math3.absVec3(Math3.gimbal({
             x:colliderObj.scale.x*0.5,
             y:colliderObj.scale.y*0.5,
@@ -34,14 +36,59 @@ export class Collision {
 
         //big ol' check to determine if the object is inside of the other object. 
         //we also need to determine it all based off of the rotation of the object
-        return (colliderObj.position.x -scaleOff.x <= object.position.x + objOff.x &&
+
+        /*return (colliderObj.position.x -scaleOff.x <= object.position.x + objOff.x &&
                 colliderObj.position.x +scaleOff.x >= object.position.x - objOff.x &&
 
                 colliderObj.position.y -scaleOff.y <= object.position.y + objOff.y &&
                 colliderObj.position.y +scaleOff.y >= object.position.y - objOff.y &&
 
                 colliderObj.position.z -scaleOff.z <= object.position.z + objOff.z &&
-                colliderObj.position.z +scaleOff.z >= object.position.z - objOff.z)
+                colliderObj.position.z +scaleOff.z >= object.position.z - objOff.z)*/
+        //if this returns true, then we can then check on a per-triangle basis. Eg: A and B may be in their bounding box, but check these triangles. 
+        //We should be able to optimise too if we get the direction of collision, singling out only the triangles that are most likely to 
+        //be returned. We can return a boolean and also some triangles
+        
+        if (colliderObj.position.x -scaleOff.x <= object.position.x + objOff.x &&
+                colliderObj.position.x +scaleOff.x >= object.position.x - objOff.x &&
+
+                colliderObj.position.y -scaleOff.y <= object.position.y + objOff.y &&
+                colliderObj.position.y +scaleOff.y >= object.position.y - objOff.y &&
+
+                colliderObj.position.z -scaleOff.z <= object.position.z + objOff.z &&
+                colliderObj.position.z +scaleOff.z >= object.position.z - objOff.z){
+           
+                let COTriangles; 
+                let OTriangles; 
+
+                if(colliderObj instanceof Mesh) {
+                    COTriangles = colliderObj.triangles;
+                }
+                if(object instanceof Mesh) {
+                    OTriangles = object.triangles;
+                }
+                if(COTriangles == undefined && OTriangles == undefined){
+                    return true;
+                }else if(COTriangles != undefined && OTriangles == undefined){
+                    return this.boxInTriangles(object, COTriangles);
+                }else if(OTriangles != undefined && COTriangles == undefined){
+                    return this.boxInTriangles(colliderObj, OTriangles);
+                }else if(OTriangles != undefined && COTriangles != undefined){
+                    return this.trianglesInTriangles(colliderObj, OTriangles);
+                }
+        }
+        return false;
+    }
+    private static boxInTriangles(box:Object, triangles:VertexData[][]):boolean{
+        
+        triangles.forEach((triangle, i)=>{
+            
+        });
+        return false; 
+    }
+    private static trianglesInTriangles(box:Object, triangles:VertexData[][]):boolean{
+        
+        return false; 
     }
 
     /**

@@ -1,14 +1,26 @@
-import type { Vec2, Vec3, Color, RotFormat, Velocity, VertexData } from "../types.ts";
-import * as math3 from "../3dMath.ts";
-import { Object } from "./object.ts";
+import type { Vec2, Vec3, Color, RotFormat, Velocity, VertexData } from "@/types.ts";
+import * as math3 from "@syngyne/3dMath.ts";
+import { Object } from "@objects/object.ts";
 
 export class Plane extends Object {
     private UV: Vec2 = { x: 1, y: 1 };
     private texture: ImageData;
     private triangles!: VertexData[][];
     private tint: Color;
+    static readonly isPlane = true;
 
-    constructor({ velocity = { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0 } }, tint = { r: 0, g: 0, b: 0 }, position = { x: 0, y: 0, z: 0 }, scale = { x: 1, y: 0.1, z: 1 }, texture, UV = { x: 1, y: 1 }, rotation = { x: 0, y: 0, z: 0 }, rotFormat = "xyz" as RotFormat }: {
+    constructor({
+        velocity = { 
+            position: { x: 0, y: 0, z: 0 }, 
+            rotation: { x: 0, y: 0, z: 0 } 
+        },
+        tint = { r: 0, g: 0, b: 0 },
+            position = { x: 0, y: 0, z: 0 },
+            scale = { x: 1, y: 0.1, z: 1 },
+            texture,
+        UV = { x: 1, y: 1 },
+            rotation = { x: 0, y: 0, z: 0 },
+            rotFormat = "xyz" as RotFormat }: {
         velocity?: Velocity;
         tint?: Color;
         position?: Vec3;
@@ -30,16 +42,16 @@ export class Plane extends Object {
         }
     }
 
-    render(drw: { triangleTex: (tri: VertexData[], texture: ImageData) => void }): void {
-        drw.triangleTex(this.triangles[0], this.texture);
-        drw.triangleTex(this.triangles[1], this.texture);
+    render(): void {
+        syn.triangleTex(this.triangles[0], this.texture);
+        syn.triangleTex(this.triangles[1], this.texture);
     }
     
     protected updateVertexPositions(): void {
-        const scale = this.getScale();
-        const rotation = this.getRotation();
-        const rotFormat = this.getRotFormat();
-        const position = this.getPosition();
+        const scale = this.scale;
+        const rotation = this.rotation
+        const rotFormat = this.rotFormat;
+        const position = this.position;
 
         this.vertexPositions = [
             math3.addVec3(math3.gimbal({ x: 0.5 * scale.x, y: 0, z: 0.5 * scale.z }, rotation, rotFormat), position),

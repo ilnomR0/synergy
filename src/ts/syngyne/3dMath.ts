@@ -1,4 +1,4 @@
-import type { Vec3, RotFormat } from "./types.ts";
+import type { Vec3, RotFormat } from "@/types.ts";
 
 export function rotX(point: Vec3, deg: number): Vec3 {
     const rad = deg * Math.PI / 180;

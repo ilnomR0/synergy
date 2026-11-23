@@ -1,33 +1,35 @@
-import type { Vec3, Color, VertexData, ScreenBounds } from "./types.ts";
-import type { Camera } from "./camera.ts";
-import type { PointLight } from "./objects/pointLight.ts";
+import type { Vec3, Color, VertexData, ScreenBounds } from "@/types.ts";
+import type { Camera } from "@objects/camera.ts";
+import type { PointLight } from "@objects/pointLight.ts";
+import { Lighting } from "./lighting";
+import type { Object } from "@/objects/object";
 
 export class syngyne {
-    private camera!: Camera;
     private canvas!: HTMLCanvasElement;
     private ctx!: CanvasRenderingContext2D;
     private offscreenCanvas!: HTMLCanvasElement;
     private offscreenCtx!: CanvasRenderingContext2D;
     private backBuffer!: ImageData;
     private zBuffer!: Float32Array;
-    private lightBuffer!: Float32Array;
     private pixels!: Uint8ClampedArray;
     private zPixels!: Float32Array;
-    private lightPixels!: Float32Array;
     private resWidth!: number;
     private resHeight!: number;
     private pointerLockBroken!: boolean;
-    private lights: PointLight[] = [];
     private paused: boolean = false;
     private aspect!: number;
+    private lighting!: Lighting;
 
     public tick: number = 0;
-    public res: number = 128;
+    public camera!: Camera;
+    public res: number = 256;
     public clearColor: number = 0x70ffffff;
     public renderMethod: string = "wireframe";
     public loop: (currentTime: number) => void = () => { };
+    private reg:FinalizationRegistry<CallableFunction>;
 
     constructor() {
+        this.reg = new FinalizationRegistry((destructor:CallableFunction)=>{destructor();})
         this.canvas = document.createElement("canvas");
         this.canvas.style.position = "absolute";
         this.canvas.style.top = "0";
@@ -51,36 +53,14 @@ export class syngyne {
                 await (navigator as any).keyboard.lock();
             }
         });
+    }
+    initApplication(callback: () => void = () => { }): void {
+        callback();
+        this.lighting = new Lighting();
         this.resizeCanvas();
+        requestAnimationFrame((tick) => this.loop(tick));
     }
 
-    private getLightScreenBounds(camSpacePos: Vec3, radius: number): ScreenBounds {
-        const nearZ = 0.01;
-
-        if (camSpacePos.z - radius <= nearZ) {
-            return {
-                minX: 0,
-                maxX: this.resWidth,
-                minY: 0,
-                maxY: this.resHeight
-            };
-        }
-
-        const factor = this.camera.getFactor();
-        const halfW = this.resWidth >> 1;
-        const halfH = this.resHeight >> 1;
-
-        const screenX = (camSpacePos.x / camSpacePos.z) * factor + halfW;
-        const screenY = (camSpacePos.y / camSpacePos.z) * factor + halfH;
-        const screenRadius = (radius / Math.max(nearZ, camSpacePos.z - radius)) * factor;
-
-        return {
-            minX: Math.max(0, Math.floor(screenX - screenRadius)),
-            maxX: Math.min(this.resWidth, Math.ceil(screenX + screenRadius)),
-            minY: Math.max(0, Math.floor(screenY - screenRadius)),
-            maxY: Math.min(this.resHeight, Math.ceil(screenY + screenRadius))
-        };
-    }
 
     clipNearPlane(camPts: VertexData[]): VertexData[][] {
         const nearZ = 0.01;
@@ -140,33 +120,29 @@ export class syngyne {
 
         this.offscreenCanvas.width = this.resWidth;
         this.offscreenCanvas.height = this.resHeight;
-
         this.backBuffer = this.offscreenCtx.createImageData(this.resWidth, this.resHeight);
         this.zBuffer = new Float32Array(this.resWidth * this.resHeight).fill(Infinity);
-        this.lightBuffer = new Float32Array((this.resWidth * this.resHeight) * 3).fill(0);
-
+        this.lighting.resizeLightBuffer();
         this.pixels = this.backBuffer.data;
         this.zPixels = this.zBuffer;
-        this.lightPixels = this.lightBuffer;
         this.ctx.imageSmoothingEnabled = false;
     }
 
-    clear(): void {
+    clearPixBuffer(): void {
         new Uint32Array(this.pixels.buffer).fill(this.clearColor);
         this.zPixels.fill(Infinity);
-        this.lightPixels.fill(0);
     }
-
-    initApplication(callback: () => void = () => { }): void {
-        callback();
-        requestAnimationFrame((tick) => this.loop(tick));
+    clearZBuffer(): void {
+        this.zPixels.fill(Infinity);
+    }
+    clearLightBuffer(): void {
+        this.lighting.clearLightBuffer();
     }
 
     present(): void {
         this.offscreenCtx.putImageData(this.backBuffer, 0, 0);
         this.ctx.drawImage(this.offscreenCanvas, 0, 0, this.canvas.width, this.canvas.height);
     }
-
     project(x: number, y: number): { x: number; y: number } {
         const pX = ~~(x * this.res) + (this.resWidth >> 1);
         const pY = ~~(y * this.res) + (this.resHeight >> 1);
@@ -185,46 +161,6 @@ export class syngyne {
         }
     }
 
-    renderLightSplat(light: PointLight): void {
-        const camSpacePos = this.camera.transformPoints(light.getPosition());
-        const radius = light.getRadius();
-
-        const bounds = this.getLightScreenBounds(camSpacePos, radius);
-
-        const factor = this.camera.getFactor();
-        const halfW = this.resWidth >> 1;
-        const halfH = this.resHeight >> 1;
-
-        const rMod = light.getColor().r / 255;
-        const gMod = light.getColor().g / 255;
-        const bMod = light.getColor().b / 255;
-
-        for (let yPixel = bounds.minY; yPixel < bounds.maxY; yPixel++) {
-            let idx = yPixel * this.resWidth + bounds.minX;
-
-            for (let xPixel = bounds.minX; xPixel < bounds.maxX; xPixel++, idx++) {
-                const zCorrect = this.zBuffer[idx];
-
-                if (zCorrect === undefined || zCorrect === Infinity) continue;
-
-                const pixelCamX = (xPixel - halfW) / this.res * zCorrect / factor;
-                const pixelCamY = (yPixel - halfH) / this.res * zCorrect / factor;
-                const pixelCamZ = zCorrect;
-
-                const dx = pixelCamX - camSpacePos.x;
-                const dy = pixelCamY - camSpacePos.y;
-                const dz = pixelCamZ - camSpacePos.z;
-
-                const distSq = Math.max(dx * dx + dy * dy + dz * dz, 0.0001);
-                const intensity = radius / distSq ;
-
-                const lightIdx = idx * 3;
-                this.lightPixels[lightIdx] += intensity * rMod;
-                this.lightPixels[lightIdx + 1] += intensity * gMod;
-                this.lightPixels[lightIdx + 2] += intensity * bMod;
-            }
-        }
-    }
 
     rasterizeTriangle(camPts: VertexData[], texture: ImageData, color: Color = { r: 0, g: 0, b: 0 }): void {
         const factor = this.camera.getFactor();
@@ -324,8 +260,8 @@ export class syngyne {
 
     compositeLights(): void {
         const pixels = this.pixels;
-        const lights = this.lightPixels;
         const totalPixels = this.resWidth * this.resHeight;
+        const lights = this.lighting.getLightBuffer();
 
         for (let i = 0; i < totalPixels; i++) {
             const pxIdx = i * 4;
@@ -354,7 +290,6 @@ export class syngyne {
         });
     }
 
-    public setCamera(camera: Camera): void { this.camera = camera; }
     public getCtx(): CanvasRenderingContext2D { return this.ctx; }
     public getCanvas(): HTMLCanvasElement { return this.canvas; }
     public getBroken(): boolean { return this.pointerLockBroken; }
@@ -367,5 +302,9 @@ export class syngyne {
             this.canvas.requestPointerLock();
         }
     }
-    public addLight(light: PointLight): void { this.lights.push(light); }
+    public getResWidth():number{return this.resWidth};
+    public getResHeight():number{return this.resHeight};
+    public getZBuffer():Float32Array{return this.zBuffer};
+    public getLighting():Lighting{return this.lighting};
+    public getRegistry():FinalizationRegistry<CallableFunction>{return this.reg};
 }

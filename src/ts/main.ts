@@ -1,21 +1,25 @@
-import { syngyne } from "./syngyne.ts";
-import { Character } from "./character.ts";
-import { Plane } from "./objects/plane.ts";
-import { Collision } from "./collision.ts";
-import { ParticleGenerator } from "./objects/particleGenerator.ts";
-import { PointLight } from "./objects/pointLight.ts";
+globalThis.jsObject = Object;
+import { syngyne } from "@syngyne/syngyne.ts";
+import { Character } from "@objects/character.ts";
+import { Plane } from "@objects/plane.ts";
+import { Collision } from "@syngyne/collision.ts";
+import { ParticleGenerator } from "@objects/particleGenerator.ts";
+import { PointLight } from "@objects/pointLight.ts";
 
 //some image imports, because vite :p
-import stoneURL from "/src/assets/images/stone.png";
-import brickURL from "/src/assets/images/brick.png";
-import errURL from "/src/assets/images/err.png";
-import torchURL from "/src/assets/images/torch.png";
-import develURL from "/src/assets/images/devel0.png";
-import fireURL from "/src/assets/images/fire.png";
-const syn = new syngyne();
+import stoneURL from "@assets/images/stone.png";
+import brickURL from "@assets/images/brick.png";
+import errURL from "@assets/images/err.png";
+import torchURL from "@assets/images/torch.png";
+import develURL from "@assets/images/devel0.png";
+import fireURL from "@assets/images/fire.png";
+import { Vec3Z } from "@syngyne/3dMath.ts";
+import { Cube } from "@objects/cube.ts";
 
-const player = new Character({ syn });
-syn.setCamera(player.getCamera());
+globalThis.syn = new syngyne();
+
+const player = new Character({});
+syn.camera = player.camera;
 
 //@ts-ignore
 const stoneTex = await syngyne.loadTexture(stoneURL);
@@ -33,7 +37,7 @@ const fireTex = await syngyne.loadTexture(fireURL);
 const wall1 = new Plane({
     position: { x: 0, y: 5, z: 0 },
     scale: { x: 100, y: 0.1, z: 10 },
-    texture: stoneTex,
+    texture: errTex,
     UV: { x: 50, y: 4 },
 });
 
@@ -106,73 +110,74 @@ const wall6 = new Plane({
         }
     },
 });
-
+const cube = new Cube({
+    texture:brickTex,
+    position:{x:20, y:1.25, z:0},
+    scale:{x:2, y:2, z:2},
+    UV:{x:4, y:4}
+})
+console.dir(wall6)
+console.dir(player)
 const superCoolParticleGenerator = new ParticleGenerator({
-    facingObject: player.getCamera(),
+    facingObject: player.camera,
     textures: [fireTex],
-    particleCount: 1000,
+    particleCount: 1,
     maxLifetime: 200,
     particleRate: 1000,
     position: { x: 0, y: 4.5, z: -10 },
 });
 
 const light = new PointLight({
-    radius: 500, velocity:
-    {
-        position: { x: 0, y: -5, z: 0 },
-        rotation: { x: 0, y: 0, z: 0 }
-    },
-    glowColor: { r: 100, g: 80, b: 60 }
+    radius: 10,
+    pwrFactor: 2,
+    glowColor: { r: 255, g: 60, b: 5 }
 });
 const light2 = new PointLight({
-    radius: 100, velocity:
-    {
-        position: { x: 100, y: 100, z: 0 },
-        rotation: { x: 0, y: 0, z: 0 }
-    },
-    glowColor: { r: 255, g: 100, b: 0 }
+    radius: 50,
+    pwrFactor:2,
+    glowColor: { r: 255, g: 255, b: 255 }
 });
-syn.addLight(light);
-syn.addLight(light2);
 
-Collision.addCollider(wall1, wall2, wall3, wall4, wall5);
+Collision.addCollider(wall1, wall2, wall3, wall4, wall5, wall6);
 
 let lastTime = 0;
+
 syn.loop = async (currentTime: number) => {
     const dt = (currentTime - lastTime) / 1000 || 0;
     lastTime = currentTime;
-    syn.clear();
+    syn.clearZBuffer();
     if (!syn.isPaused()) {
+    syn.clearPixBuffer(); 
+    syn.clearLightBuffer();
 
-        light.updatePosition(player.getPosition());
-        light.setRadius((Math.random() * (50 - 40)) + 50);
+        light.updatePosition(player.position);
         wall6.updateRotation({ x: currentTime * 0.02, y: 90, z: 0 });
-        wall6.render(syn);
+        wall6.render();
         wall6.updateRotation({ x: currentTime * 0.02, y: 90, z: 180 });
-        wall6.render(syn);
+        wall6.render();
         
-        wall1.render(syn);
-        wall2.render(syn);
-        wall3.render(syn);
-        wall4.render(syn);
-        wall5.render(syn);
+        wall1.render();
+        wall2.render();
+        wall3.render();
+        wall4.render();
+        wall5.render();
         
 
-        wall6.render(syn);
-        superCoolParticleGenerator.render(syn);
+        wall6.render();
+        cube.render();
+        superCoolParticleGenerator.render();
         
-        light.render(syn);
-        light2.render(syn);
+        light.render();
+        light2.render();
         syn.compositeLights();
-        
-        syn.present();
         Collision.rigidify(player, dt);
 
 
     } else {
 
     }
-        player.controlCharacter(dt, syn);
+        syn.present();
+        player.controlCharacter(dt);
 
     requestAnimationFrame(syn.loop);
 };
